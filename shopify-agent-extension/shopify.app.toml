@@ -1,0 +1,31 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "fe4a787301dae30d67772b49c11f9196"
+name = "happy-shopper"
+handle = "happy-shopper-99"
+embedded = true
+application_url = "https://17c747c537eb.ngrok-free.app"
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2025-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+scopes = "write_products"
+
+[auth]
+redirect_urls = ["https://17c747c537eb.ngrok-free.app/auth/callback", "https://17c747c537eb.ngrok-free.app/auth/shopify/callback", "https://17c747c537eb.ngrok-free.app/api/auth/callback"]
+
+[pos]
+embedded = false
