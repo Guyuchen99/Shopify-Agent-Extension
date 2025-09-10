@@ -235,7 +235,8 @@
         sessionId,
         messagesContainer,
       ) {
-        const API_URL = "http://localhost:3000/api/chat/send-message";
+        const API_URL =
+          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/send-message";
 
         try {
           const response = await fetch(API_URL, {
@@ -271,7 +272,8 @@
       },
 
       fetchLatestSession: async function (userId) {
-        const API_URL = "http://localhost:3000/api/chat/get-latest-session";
+        const API_URL =
+          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/get-latest-session";
 
         try {
           const response = await fetch(API_URL, {
@@ -297,7 +299,8 @@
         loadingMessage.textContent = "Loading conversation history...";
         messagesContainer.appendChild(loadingMessage);
 
-        const API_URL = "http://localhost:3000/api/chat/get-history";
+        const API_URL =
+          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/get-history";
 
         try {
           const response = await fetch(API_URL, {
