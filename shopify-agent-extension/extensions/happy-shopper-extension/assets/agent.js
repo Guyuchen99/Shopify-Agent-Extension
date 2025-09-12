@@ -1,10 +1,13 @@
 (function () {
+  const API_BASE_URL =
+    "https://shopify-agent-extension-412794838331.us-central1.run.app";
+
   const ShopifyAgent = {
     UI: {
       elements: {},
       isMobile: false,
 
-      init: function (container) {
+      init(container) {
         if (!container) return;
 
         // Cache DOM elements
@@ -20,14 +23,14 @@
           messagesContainer: container.querySelector(".shopify-agent-messages"),
         };
 
-        // Detect mobile device
+        // Detect if on mobile device
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         // Set up event listeners
-        this.setupEventListeners();
+        this.setUpEventListeners();
       },
 
-      setupEventListeners: function () {
+      setUpEventListeners() {
         const {
           chatBubble,
           closeButton,
@@ -36,18 +39,18 @@
           messagesContainer,
         } = this.elements;
 
-        // Toggle chat window visibility
+        // Toggle chat when bubble clicked
         chatBubble.addEventListener("click", () => this.toggleChatWindow());
 
-        // Close chat window
-        closeButton.addEventListener("click", () => this.closeChatWindow());
+        // Close chat on close button
+        closeButton.addEventListener("click", () => this.toggleChatWindow());
 
-        // Send message when pressing Enter in input
+        // Send on enter key
         chatInput.addEventListener("keydown", (e) => {
           if (e.key === "Enter" && chatInput.value.trim() !== "") {
             ShopifyAgent.Message.send(chatInput, messagesContainer);
 
-            // On mobile, handle keyboard
+            // Hide keyboard on mobile
             if (this.isMobile) {
               chatInput.blur();
               setTimeout(() => chatInput.focus(), 300);
@@ -55,34 +58,36 @@
           }
         });
 
-        // Send message when clicking send button
+        // Send on click
         sendButton.addEventListener("click", () => {
           if (chatInput.value.trim() !== "") {
             ShopifyAgent.Message.send(chatInput, messagesContainer);
 
-            // On mobile, focus input after sending
+            // Focus input after sending on mobile
             if (this.isMobile) {
               setTimeout(() => chatInput.focus(), 300);
             }
           }
         });
 
-        // Handle window resize to adjust scrolling
+        // Keep messages pinned to bottom on resize
         window.addEventListener("resize", () => this.scrollToBottom());
       },
 
-      toggleChatWindow: function () {
+      toggleChatWindow() {
         const { chatWindow, chatInput } = this.elements;
 
-        chatWindow.classList.toggle("opacity-100");
-        chatWindow.classList.toggle("pointer-events-auto");
-        chatWindow.classList.toggle("translate-y-0");
-        chatWindow.classList.toggle("opacity-0");
-        chatWindow.classList.toggle("pointer-events-none");
-        chatWindow.classList.toggle("translate-y-2");
+        const isOpen = chatWindow.classList.toggle("opacity-100");
 
-        if (chatWindow.classList.contains("opacity-100")) {
-          // On mobile, lock body scroll with Tailwind utilities
+        // Toggle open/close classes
+        chatWindow.classList.toggle("pointer-events-auto", isOpen);
+        chatWindow.classList.toggle("translate-y-0", isOpen);
+        chatWindow.classList.toggle("opacity-0", !isOpen);
+        chatWindow.classList.toggle("pointer-events-none", !isOpen);
+        chatWindow.classList.toggle("translate-y-2", !isOpen);
+
+        if (isOpen) {
+          // Focus input & lock scroll on mobile
           if (this.isMobile) {
             document.body.classList.add(
               "overflow-hidden",
@@ -94,38 +99,18 @@
           } else {
             chatInput.focus();
           }
-          // Always scroll messages to bottom when opening
           this.scrollToBottom();
         } else {
-          // Remove body scroll lock
+          // Unlock scroll when closed
           document.body.classList.remove(
             "overflow-hidden",
             "fixed",
             "w-full",
             "h-full",
           );
-        }
-      },
-
-      closeChatWindow: function () {
-        const { chatWindow, chatInput } = this.elements;
-
-        chatWindow.classList.toggle("opacity-100");
-        chatWindow.classList.toggle("pointer-events-auto");
-        chatWindow.classList.toggle("translate-y-0");
-        chatWindow.classList.toggle("opacity-0");
-        chatWindow.classList.toggle("pointer-events-none");
-        chatWindow.classList.toggle("translate-y-2");
-
-        // On mobile, blur input to hide keyboard and enable body scrolling
-        if (this.isMobile) {
-          chatInput.blur();
-          document.body.classList.remove(
-            "overflow-hidden",
-            "fixed",
-            "w-full",
-            "h-full",
-          );
+          if (this.isMobile) {
+            chatInput.blur();
+          }
         }
       },
 
@@ -136,12 +121,12 @@
         }, 100);
       },
 
-      showTypingIndicator: function () {
+      showTypingIndicator() {
         const { messagesContainer } = this.elements;
 
         const typingIndicator = document.createElement("div");
 
-        typingIndicator.setAttribute("data-typing-indicator", "true");
+        typingIndicator.dataset.typingIndicator = "true";
 
         typingIndicator.className =
           "flex items-center gap-1.5 px-4 py-5 rounded-md bg-gray-100 self-start text-xl";
@@ -156,7 +141,7 @@
         this.scrollToBottom();
       },
 
-      removeTypingIndicator: function () {
+      removeTypingIndicator() {
         const { messagesContainer } = this.elements;
 
         const typingIndicator = messagesContainer.querySelector(
@@ -167,19 +152,44 @@
           typingIndicator.remove();
         }
       },
+
+      async refreshCartUI() {
+        try {
+          const response = await fetch("/cart");
+          const html = await response.text();
+
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          // Replace cart drawer
+          const newDrawer = doc.querySelector(".cart-drawer");
+          const currentDrawer = document.querySelector(".cart-drawer");
+          if (newDrawer && currentDrawer) {
+            currentDrawer.innerHTML = newDrawer.innerHTML;
+          }
+
+          // Replace cart count
+          const newCount = doc.querySelector(".cart-count-bubble");
+          const currentCount = document.querySelector(".cart-count-bubble");
+          if (newCount && currentCount) {
+            currentCount.innerHTML = newCount.innerHTML;
+          }
+        } catch (error) {
+          console.error("Error in UI.refreshCartUI: ", error);
+        }
+      },
     },
 
     Message: {
-      send: async function (chatInput, messagesContainer) {
+      async send(chatInput, messagesContainer) {
         const userMessage = chatInput.value.trim();
 
         let userId = localStorage.getItem("shopifyAgentUserId");
+        let cartId = sessionStorage.getItem("shopifyAgentCartId");
         let sessionId = sessionStorage.getItem("shopifyAgentSessionId");
 
         // Add user message to chat
-        this.add(userMessage, "user", messagesContainer);
-
-        // Clear input
+        ShopifyAgent.Message.add(userMessage, "user", messagesContainer);
         chatInput.value = "";
 
         // Show typing indicator
@@ -196,11 +206,12 @@
           await ShopifyAgent.API.oneShotResponse(
             userMessage,
             userId,
+            cartId,
             sessionId,
             messagesContainer,
           );
         } catch (error) {
-          console.error("API error:", error);
+          console.error("Error in Message.send: ", error);
           ShopifyAgent.UI.removeTypingIndicator();
           this.add(
             "Sorry, I couldn't process your request at the moment. Please try again later.",
@@ -210,7 +221,7 @@
         }
       },
 
-      add: function (messageContent, messageSender, messagesContainer) {
+      add(messageContent, messageSender, messagesContainer) {
         const messageElement = document.createElement("div");
 
         messageElement.className = `max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words ${
@@ -218,51 +229,45 @@
             ? "bg-gray-100 text-gray-700 self-start"
             : "self-end bg-violet-500 text-white"
         }`;
-
         messageElement.textContent = messageContent;
-
         messagesContainer.appendChild(messageElement);
-        ShopifyAgent.UI.scrollToBottom();
 
+        ShopifyAgent.UI.scrollToBottom();
         return messageElement;
       },
     },
 
     API: {
-      oneShotResponse: async function (
+      async oneShotResponse(
         userMessage,
         userId,
+        cartId,
         sessionId,
         messagesContainer,
       ) {
-        const API_URL =
-          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/send-message";
+        const requestUrl = `${API_BASE_URL}/api/chat/send-message`;
 
         try {
-          const response = await fetch(API_URL, {
+          const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              userId: userId,
+              sessionId: sessionId,
+              cartId: cartId,
               message: userMessage,
-              user_id: userId,
-              session_id: sessionId,
             }),
           });
 
           const data = await response.json();
 
-          let modelMessageElement = document.createElement("div");
-          modelMessageElement.className =
-            "max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words bg-gray-100 text-gray-700 self-start";
-
-          modelMessageElement.textContent = data.content.parts[0].text;
-          messagesContainer.appendChild(modelMessageElement);
-
-          ShopifyAgent.UI.removeTypingIndicator();
-          ShopifyAgent.UI.scrollToBottom();
+          data.forEach((event) =>
+            this.handleResponseEvent(event, messagesContainer),
+          );
         } catch (error) {
-          console.error("Error in oneShotResponse: ", error);
+          console.error("Error in API.oneShotResponse: ", error);
           ShopifyAgent.UI.removeTypingIndicator();
+          ShopifyAgent.Message.add(error.message, "model", messagesContainer);
           ShopifyAgent.Message.add(
             "Server error, please try again later.",
             "model",
@@ -271,16 +276,32 @@
         }
       },
 
-      fetchLatestSession: async function (userId) {
-        const API_URL =
-          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/get-latest-session";
+      handleResponseEvent(event, messagesContainer) {
+        const part = event.content?.parts?.[0];
+
+        // Render model message
+        if (part.text) {
+          ShopifyAgent.Message.add(part.text, "model", messagesContainer);
+        }
+
+        // Refresh cart if cart tool triggered
+        if (part.function_response?.name?.includes("cart")) {
+          ShopifyAgent.UI.refreshCartUI();
+        }
+
+        ShopifyAgent.UI.removeTypingIndicator();
+        ShopifyAgent.UI.scrollToBottom();
+      },
+
+      async fetchLatestSession(userId) {
+        const requestUrl = `${API_BASE_URL}/api/chat/get-latest-session`;
 
         try {
-          const response = await fetch(API_URL, {
+          const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              user_id: userId,
+              userId: userId,
             }),
           });
 
@@ -288,45 +309,50 @@
 
           return data.output.sessions[0]?.id;
         } catch (error) {
-          console.error("Error in fetchLatestSession: ", error);
+          console.error("Error in API.fetchLatestSession: ", error);
         }
       },
 
-      fetchChatHistory: async function (userId, session_id, messagesContainer) {
+      async fetchChatHistory(userId, sessionId, messagesContainer) {
         const loadingMessage = document.createElement("div");
         loadingMessage.className =
           "max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words bg-gray-100 text-gray-700 self-start";
         loadingMessage.textContent = "Loading conversation history...";
         messagesContainer.appendChild(loadingMessage);
 
-        const API_URL =
-          "https://shopify-agent-extension-412794838331.us-central1.run.app/api/chat/get-history";
+        const requestUrl = `${API_BASE_URL}/api/chat/get-history`;
 
         try {
-          const response = await fetch(API_URL, {
+          const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              user_id: userId,
-              session_id: session_id,
+              userId: userId,
+              sessionId: sessionId,
             }),
           });
 
           const data = await response.json();
           messagesContainer.removeChild(loadingMessage);
 
-          if (data?.output?.events?.length) {
+          // Render past messages
+          if (data.output.events.length) {
             data.output.events.forEach((event) => {
               const role = event.content?.role;
               const text = event.content?.parts?.[0]?.text;
 
-              if (text) {
+              if (!text) return;
+
+              if (role === "user") {
+                const userMessage = ShopifyAgent.Util.extractUserMessage(text);
+                ShopifyAgent.Message.add(userMessage, role, messagesContainer);
+              } else {
                 ShopifyAgent.Message.add(text, role, messagesContainer);
               }
             });
           }
         } catch (error) {
-          console.error("Error in fetchChatHistory: ", error);
+          console.error("Error in API.fetchChatHistory: ", error);
           messagesContainer.removeChild(loadingMessage);
           ShopifyAgent.Message.add(
             "Failed to load conversation history.",
@@ -335,23 +361,52 @@
           );
         }
       },
+
+      async fetchCartId() {
+        try {
+          const response = await fetch("/cart.js");
+          const data = await response.json();
+          return data.token;
+        } catch (error) {
+          console.error("Error in API.fetchCartId: ", error);
+        }
+      },
     },
 
-    init: async function () {
-      // Initialize UI
+    Util: {
+      extractUserMessage(message) {
+        const parts = message.split("user_message=");
+        return parts.length > 1 ? parts[1].trim() : message;
+      },
+    },
+
+    async init() {
       const container = document.querySelector(".shopify-agent-container");
       if (!container) return;
 
       this.UI.init(container);
+      this.UI.showTypingIndicator();
 
       // Check for existing conversation
       let userId = localStorage.getItem("shopifyAgentUserId");
+      let cartId = sessionStorage.getItem("shopifyAgentCartId");
       let sessionId = sessionStorage.getItem("shopifyAgentSessionId");
 
+      // Ensure cart ID exists
+      if (!cartId) {
+        cartId = await this.API.fetchCartId();
+
+        if (cartId) {
+          sessionStorage.setItem("shopifyAgentCartId", cartId);
+        }
+      }
+
+      // Handle new user
       if (!userId) {
         userId = "user-" + crypto.randomUUID();
         localStorage.setItem("shopifyAgentUserId", userId);
 
+        this.UI.removeTypingIndicator();
         const welcomeMessage = "👋 Hi there! How can I help you today?";
         this.Message.add(
           welcomeMessage,
@@ -361,10 +416,12 @@
         return;
       }
 
+      // Handle new sessions
       if (!sessionId) {
         sessionId = await this.API.fetchLatestSession(userId);
         if (sessionId) {
           sessionStorage.setItem("shopifyAgentSessionId", sessionId);
+          this.UI.removeTypingIndicator();
           await this.API.fetchChatHistory(
             userId,
             sessionId,
@@ -372,6 +429,7 @@
           );
           return;
         } else {
+          this.UI.removeTypingIndicator();
           const welcomeMessage = "👋 Hi there! How can I help you today?";
           this.Message.add(
             welcomeMessage,
@@ -382,6 +440,7 @@
         }
       }
 
+      this.UI.removeTypingIndicator();
       await this.API.fetchChatHistory(
         userId,
         sessionId,
