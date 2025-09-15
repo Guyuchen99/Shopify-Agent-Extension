@@ -1,6 +1,18 @@
 (function () {
-  const API_BASE_URL =
-    "https://shopify-agent-extension-412794838331.us-central1.run.app";
+  const CONFIG = {
+    API_BASE_URL:
+      "https://shopify-agent-extension-412794838331.us-central1.run.app",
+    STORAGE_KEYS: {
+      USER_ID: "shopifyAgentUserId",
+      CART_ID: "shopifyAgentCartId",
+      SESSION_ID: "shopifyAgentSessionId",
+    },
+    TIMING: {
+      FOCUS_DELAY: 300,
+      KEYBOARD_DELAY: 500,
+      SCROLL_DELAY: 100,
+    },
+  };
 
   const ShopifyAgent = {
     UI: {
@@ -10,7 +22,7 @@
       init(container) {
         if (!container) return;
 
-        // Cache DOM elements
+        // Cache DOM elements for performance
         this.elements = {
           container: container,
           chatBubble: container.querySelector(".shopify-agent-bubble"),
@@ -47,25 +59,33 @@
 
         // Send on enter key
         chatInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && chatInput.value.trim() !== "") {
-            ShopifyAgent.Message.send(chatInput, messagesContainer);
+          if (
+            e.key === "Enter" &&
+            chatInput.value.trim() !== "" &&
+            !chatInput.disabled
+          ) {
+            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
 
             // Hide keyboard on mobile
             if (this.isMobile) {
               chatInput.blur();
-              setTimeout(() => chatInput.focus(), 300);
+              setTimeout(() => chatInput.focus(), CONFIG.TIMING.FOCUS_DELAY);
             }
           }
         });
 
         // Send on click
         sendButton.addEventListener("click", () => {
-          if (chatInput.value.trim() !== "") {
-            ShopifyAgent.Message.send(chatInput, messagesContainer);
+          if (
+            chatInput.value.trim() !== "" &&
+            !chatInput.disabled &&
+            !sendButton.disabled
+          ) {
+            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
 
             // Focus input after sending on mobile
             if (this.isMobile) {
-              setTimeout(() => chatInput.focus(), 300);
+              setTimeout(() => chatInput.focus(), CONFIG.TIMING.FOCUS_DELAY);
             }
           }
         });
@@ -95,7 +115,7 @@
               "w-full",
               "h-full",
             );
-            setTimeout(() => chatInput.focus(), 500);
+            setTimeout(() => chatInput.focus(), CONFIG.TIMING.KEYBOARD_DELAY);
           } else {
             chatInput.focus();
           }
@@ -116,9 +136,10 @@
 
       scrollToBottom() {
         const { messagesContainer } = this.elements;
+
         setTimeout(() => {
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 100);
+        }, CONFIG.TIMING.SCROLL_DELAY);
       },
 
       showTypingIndicator() {
@@ -139,6 +160,7 @@
 
         messagesContainer.appendChild(typingIndicator);
         this.scrollToBottom();
+        this.disableInput();
       },
 
       removeTypingIndicator() {
@@ -151,6 +173,29 @@
         if (typingIndicator) {
           typingIndicator.remove();
         }
+        this.enableInput();
+      },
+
+      disableInput() {
+        const { chatInput, sendButton } = this.elements;
+
+        chatInput.disabled = true;
+        chatInput.placeholder = "Waiting for response...";
+        chatInput.classList.add("opacity-50", "cursor-not-allowed");
+
+        sendButton.disabled = true;
+        sendButton.classList.add("opacity-50", "cursor-not-allowed");
+      },
+
+      enableInput() {
+        const { chatInput, sendButton } = this.elements;
+
+        chatInput.disabled = false;
+        chatInput.placeholder = "Ask me anything...";
+        chatInput.classList.remove("opacity-50", "cursor-not-allowed");
+
+        sendButton.disabled = false;
+        sendButton.classList.remove("opacity-50", "cursor-not-allowed");
       },
 
       async refreshCartUI() {
@@ -181,25 +226,27 @@
     },
 
     Message: {
-      async send(chatInput, messagesContainer) {
+      async sendMessage(chatInput, messagesContainer) {
         const userMessage = chatInput.value.trim();
 
-        let userId = localStorage.getItem("shopifyAgentUserId");
-        let cartId = sessionStorage.getItem("shopifyAgentCartId");
-        let sessionId = sessionStorage.getItem("shopifyAgentSessionId");
+        this.grayOutAllSuggestions(messagesContainer);
 
-        // Add user message to chat
-        ShopifyAgent.Message.add(userMessage, "user", messagesContainer);
+        let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
+        let cartId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.CART_ID);
+        let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
+
+        // Add user message to chat and clear input
+        ShopifyAgent.Message.addMessage(userMessage, "user", messagesContainer);
         chatInput.value = "";
 
         // Show typing indicator
         ShopifyAgent.UI.showTypingIndicator();
 
         try {
-          if (!sessionId) {
+          if (!sessionId && userId) {
             sessionId = await ShopifyAgent.API.fetchLatestSession(userId);
             if (sessionId) {
-              sessionStorage.setItem("shopifyAgentSessionId", sessionId);
+              sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
             }
           }
 
@@ -211,9 +258,9 @@
             messagesContainer,
           );
         } catch (error) {
-          console.error("Error in Message.send: ", error);
+          console.error("Error in Message.sendMessage: ", error);
           ShopifyAgent.UI.removeTypingIndicator();
-          this.add(
+          this.addMessage(
             "Sorry, I couldn't process your request at the moment. Please try again later.",
             "model",
             messagesContainer,
@@ -221,7 +268,7 @@
         }
       },
 
-      add(messageContent, messageSender, messagesContainer) {
+      addMessage(messageContent, messageSender, messagesContainer) {
         const messageElement = document.createElement("div");
 
         messageElement.className = `max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words ${
@@ -229,11 +276,176 @@
             ? "bg-gray-100 text-gray-700 self-start"
             : "self-end bg-violet-500 text-white"
         }`;
-        messageElement.textContent = messageContent;
+        messageElement.innerHTML = this.formatMessageContent(messageContent);
         messagesContainer.appendChild(messageElement);
 
         ShopifyAgent.UI.scrollToBottom();
-        return messageElement;
+      },
+
+      addSuggestions(suggestions, messagesContainer) {
+        const suggestionsContainer = document.createElement("div");
+        suggestionsContainer.className = "flex flex-col gap-2 mt-3 mb-2";
+        suggestionsContainer.dataset.suggestionGroup = "true";
+
+        suggestions.forEach((suggestion, index) => {
+          const suggestionButton = document.createElement("button");
+          suggestionButton.className =
+            "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
+
+          suggestionButton.innerHTML = this.formatMessageContent(suggestion);
+
+          // Track which suggestion this is
+          suggestionButton.dataset.suggestionIndex = index;
+
+          // Store original text for sending
+          suggestionButton.dataset.originalText = suggestion;
+
+          suggestionButton.addEventListener("click", () => {
+            // Update suggestion states before sending message
+            this.updateSuggestionStates(index, suggestionsContainer);
+
+            // Use original text for sending, not the formatted HTML
+            const chatInput = ShopifyAgent.UI.elements.chatInput;
+            chatInput.value = suggestion;
+            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
+          });
+
+          suggestionsContainer.appendChild(suggestionButton);
+        });
+
+        messagesContainer.appendChild(suggestionsContainer);
+        ShopifyAgent.UI.scrollToBottom();
+      },
+
+      updateSuggestionStates(clickedIndex, suggestionsContainer) {
+        const suggestionButtons =
+          suggestionsContainer.querySelectorAll("button");
+
+        suggestionButtons.forEach((button, index) => {
+          if (index === clickedIndex) {
+            // Keep clicked suggestion purple/active
+            button.className =
+              "text-left p-3 rounded-lg bg-violet-500 text-white text-sm transition-colors cursor-pointer";
+          } else {
+            // Gray out other suggestions
+            button.className =
+              "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+            button.disabled = true;
+          }
+        });
+      },
+
+      grayOutAllSuggestions(messagesContainer) {
+        const suggestionGroups = messagesContainer.querySelectorAll(
+          '[data-suggestion-group="true"]',
+        );
+
+        suggestionGroups.forEach((group) => {
+          const suggestionButtons = group.querySelectorAll("button");
+          suggestionButtons.forEach((button) => {
+            button.className =
+              "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+            button.disabled = true;
+          });
+        });
+      },
+
+      grayOutHistoricalSuggestions(messagesContainer) {
+        const suggestionGroups = messagesContainer.querySelectorAll(
+          '[data-suggestion-group="true"]',
+        );
+
+        if (suggestionGroups.length === 0) return;
+
+        // Gray out all suggestion groups except the last one (most recent)
+        suggestionGroups.forEach((group, index) => {
+          const isLatestGroup = index === suggestionGroups.length - 1;
+          const suggestionButtons = group.querySelectorAll("button");
+
+          suggestionButtons.forEach((button) => {
+            if (!isLatestGroup) {
+              // Gray out historical suggestions
+              button.className =
+                "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+              button.disabled = true;
+            } else {
+              // Keep latest suggestions active and clickable
+              button.className =
+                "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
+              button.disabled = false;
+            }
+          });
+        });
+      },
+
+      formatMessageContent(messageContent) {
+        if (!messageContent) return "";
+
+        let formatted = messageContent;
+
+        // 1. Format links: [text](url) -> <a href="url">text</a>
+        formatted = formatted.replace(
+          /\[([^\]]+)\]\(([^)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-violet-600 hover:text-violet-800 underline">$1</a>',
+        );
+
+        // 2. Format bold text: **text** -> <strong>text</strong>
+        formatted = formatted.replace(
+          /\*\*([^*]+)\*\*/g,
+          '<strong class="font-semibold">$1</strong>',
+        );
+
+        // 3. Format unordered lists: lines starting with "- " or "* "
+        formatted = formatted.replace(
+          /^[\s]*[-*]\s+(.+)$/gm,
+          '<li class="ml-4 list-disc list-inside">$1</li>',
+        );
+
+        // 4. Format ordered lists: lines starting with "1. ", "2. ", etc.
+        formatted = formatted.replace(
+          /^[\s]*\d+\.\s+(.+)$/gm,
+          '<li class="ml-4 list-decimal list-inside">$1</li>',
+        );
+
+        // 5. Wrap consecutive list items in proper list containers
+        // Handle unordered lists
+        formatted = formatted.replace(
+          /(<li class="ml-4 list-disc[^"]*">[^<]*<\/li>[\s\n]*)+/g,
+          (match) => {
+            return '<ul class="my-2 space-y-1">' + match + "</ul>";
+          },
+        );
+
+        // Handle ordered lists
+        formatted = formatted.replace(
+          /(<li class="ml-4 list-decimal[^"]*">[^<]*<\/li>[\s\n]*)+/g,
+          (match) => {
+            return '<ol class="my-2 space-y-1">' + match + "</ol>";
+          },
+        );
+
+        // 6. Convert line breaks to <br> tags for proper spacing
+        formatted = formatted.replace(/\n/g, "<br>");
+
+        // 7. Clean up extra spacing around lists
+        formatted = formatted.replace(/<br>(<[uo]l)/g, "$1");
+        formatted = formatted.replace(/(<\/[uo]l>)<br>/g, "$1");
+
+        return formatted;
+      },
+
+      parseMessageContent(messageContent, messagesContainer) {
+        try {
+          const parsedContent = JSON.parse(messageContent);
+
+          if (parsedContent.message && parsedContent.suggestion) {
+            this.addMessage(parsedContent.message, "model", messagesContainer);
+
+            this.addSuggestions(parsedContent.suggestion, messagesContainer);
+          }
+        } catch (error) {
+          this.addMessage(messageContent, "model", messagesContainer);
+        }
       },
     },
 
@@ -245,7 +457,7 @@
         sessionId,
         messagesContainer,
       ) {
-        const requestUrl = `${API_BASE_URL}/api/chat/send-message`;
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/send-message`;
 
         try {
           const response = await fetch(requestUrl, {
@@ -266,22 +478,21 @@
           );
         } catch (error) {
           console.error("Error in API.oneShotResponse: ", error);
-          ShopifyAgent.UI.removeTypingIndicator();
-          ShopifyAgent.Message.add(error.message, "model", messagesContainer);
-          ShopifyAgent.Message.add(
-            "Server error, please try again later.",
-            "model",
-            messagesContainer,
-          );
+          throw error;
         }
       },
 
       handleResponseEvent(event, messagesContainer) {
         const part = event.content?.parts?.[0];
 
-        // Render model message
-        if (part.text) {
-          ShopifyAgent.Message.add(part.text, "model", messagesContainer);
+        if (event.author === "suggestion_agent") {
+          // Render model message
+          if (part.text) {
+            ShopifyAgent.Message.parseMessageContent(
+              part.text,
+              messagesContainer,
+            );
+          }
         }
 
         // Refresh cart if cart tool triggered
@@ -290,11 +501,10 @@
         }
 
         ShopifyAgent.UI.removeTypingIndicator();
-        ShopifyAgent.UI.scrollToBottom();
       },
 
       async fetchLatestSession(userId) {
-        const requestUrl = `${API_BASE_URL}/api/chat/get-latest-session`;
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-latest-session`;
 
         try {
           const response = await fetch(requestUrl, {
@@ -310,6 +520,7 @@
           return data.output.sessions[0]?.id;
         } catch (error) {
           console.error("Error in API.fetchLatestSession: ", error);
+          return null;
         }
       },
 
@@ -320,7 +531,7 @@
         loadingMessage.textContent = "Loading conversation history...";
         messagesContainer.appendChild(loadingMessage);
 
-        const requestUrl = `${API_BASE_URL}/api/chat/get-history`;
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-history`;
 
         try {
           const response = await fetch(requestUrl, {
@@ -338,23 +549,36 @@
           // Render past messages
           if (data.output.events.length) {
             data.output.events.forEach((event) => {
-              const role = event.content?.role;
+              const role = event.author;
               const text = event.content?.parts?.[0]?.text;
 
               if (!text) return;
 
               if (role === "user") {
                 const userMessage = ShopifyAgent.Util.extractUserMessage(text);
-                ShopifyAgent.Message.add(userMessage, role, messagesContainer);
-              } else {
-                ShopifyAgent.Message.add(text, role, messagesContainer);
+                ShopifyAgent.Message.addMessage(
+                  userMessage,
+                  role,
+                  messagesContainer,
+                );
+              }
+
+              if (role === "suggestion_agent") {
+                ShopifyAgent.Message.parseMessageContent(
+                  text,
+                  messagesContainer,
+                );
               }
             });
+
+            ShopifyAgent.Message.grayOutHistoricalSuggestions(
+              messagesContainer,
+            );
           }
         } catch (error) {
           console.error("Error in API.fetchChatHistory: ", error);
           messagesContainer.removeChild(loadingMessage);
-          ShopifyAgent.Message.add(
+          ShopifyAgent.Message.addMessage(
             "Failed to load conversation history.",
             "model",
             messagesContainer,
@@ -369,6 +593,7 @@
           return data.token;
         } catch (error) {
           console.error("Error in API.fetchCartId: ", error);
+          return null;
         }
       },
     },
@@ -377,6 +602,16 @@
       extractUserMessage(message) {
         const parts = message.split("user_message=");
         return parts.length > 1 ? parts[1].trim() : message;
+      },
+
+      showWelcomeMessage() {
+        ShopifyAgent.UI.removeTypingIndicator();
+        const welcomeMessage = "👋 Hi there! How can I help you today?";
+        ShopifyAgent.Message.addMessage(
+          welcomeMessage,
+          "model",
+          ShopifyAgent.UI.elements.messagesContainer,
+        );
       },
     },
 
@@ -388,9 +623,9 @@
       this.UI.showTypingIndicator();
 
       // Check for existing conversation
-      let userId = localStorage.getItem("shopifyAgentUserId");
-      let cartId = sessionStorage.getItem("shopifyAgentCartId");
-      let sessionId = sessionStorage.getItem("shopifyAgentSessionId");
+      let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
+      let cartId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.CART_ID);
+      let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
 
       // Ensure cart ID exists
       if (!cartId) {
@@ -404,38 +639,20 @@
       // Handle new user
       if (!userId) {
         userId = "user-" + crypto.randomUUID();
-        localStorage.setItem("shopifyAgentUserId", userId);
+        localStorage.setItem(CONFIG.STORAGE_KEYS.USER_ID, userId);
 
-        this.UI.removeTypingIndicator();
-        const welcomeMessage = "👋 Hi there! How can I help you today?";
-        this.Message.add(
-          welcomeMessage,
-          "model",
-          this.UI.elements.messagesContainer,
-        );
+        this.Util.showWelcomeMessage();
         return;
       }
 
       // Handle new sessions
       if (!sessionId) {
         sessionId = await this.API.fetchLatestSession(userId);
+
         if (sessionId) {
-          sessionStorage.setItem("shopifyAgentSessionId", sessionId);
-          this.UI.removeTypingIndicator();
-          await this.API.fetchChatHistory(
-            userId,
-            sessionId,
-            this.UI.elements.messagesContainer,
-          );
-          return;
+          sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
         } else {
-          this.UI.removeTypingIndicator();
-          const welcomeMessage = "👋 Hi there! How can I help you today?";
-          this.Message.add(
-            welcomeMessage,
-            "model",
-            this.UI.elements.messagesContainer,
-          );
+          this.Util.showWelcomeMessage();
           return;
         }
       }
