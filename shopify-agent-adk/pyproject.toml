@@ -8,6 +8,7 @@ dependencies = [
     "absl-py>=2.3.1",
     "google-adk>=1.13.0",
     "google-cloud-aiplatform[adk,agent-engines]>=1.111.0",
+    "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",
 ]
 
