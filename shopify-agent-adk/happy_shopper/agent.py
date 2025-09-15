@@ -7,7 +7,7 @@ from typing import List
 from happy_shopper.prompt import ShopifyAgentInstruction, SuggestionAgentInstruction
 
 
-class RootAgentOutput(BaseModel):
+class SuggestionAgentOutput(BaseModel):
     message: str = Field(description="The main response from the agent")
     suggestion: List[str] = Field(
         description="User's possible follow-up reply based on the conversation context"
@@ -17,7 +17,7 @@ class RootAgentOutput(BaseModel):
 shopify_agent = Agent(
     name="shopify_agent",
     model="gemini-2.5-flash",
-    description="A personalized shopping agent for YC Graphixs's Store",
+    description="A personalized shopping agent for YC Graphixs's store",
     instruction=ShopifyAgentInstruction,
     tools=[
         MCPToolset(
@@ -34,14 +34,14 @@ shopify_agent = Agent(
 suggestion_agent = Agent(
     name="suggestion_agent",
     model="gemini-2.5-flash",
-    description="Formats Shopify agent results into final user-friendly output with prompt suggestions.",
+    description="Formats shopify agent results into final user-friendly output with prompt suggestions",
     instruction=SuggestionAgentInstruction,
+    output_schema=SuggestionAgentOutput,
     include_contents="none",
-    output_schema=RootAgentOutput,
 )
 
 root_agent = SequentialAgent(
     name="root_agent",
-    description="Orchestrates the Shopify and Suggestion Agents for YC Graphixs's Store",
+    description="Orchestrates the shopify and suggestion agents for YC Graphixs's store",
     sub_agents=[shopify_agent, suggestion_agent],
 )
