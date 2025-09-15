@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from vertexai import agent_engines
 from vertexai.preview import reasoning_engines
 
-from shopify_agent.agent import root_agent
+from happy_shopper.agent import root_agent
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("project_id", None, "GCP project ID.")
@@ -52,11 +52,11 @@ def create() -> None:
     # Now deploy to Agent Engine
     remote_app = agent_engines.create(
         agent_engine=app,
-        display_name="shopify_agent",
+        display_name="happy_shopper",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]",
         ],
-        extra_packages=["./shopify_agent"],
+        extra_packages=["./happy_shopper"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
 
