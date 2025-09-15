@@ -54,7 +54,11 @@ def create() -> None:
         agent_engine=app,
         display_name="happy_shopper",
         requirements=[
+            "google-adk",
             "google-cloud-aiplatform[adk,agent_engines]",
+            "python-dotenv",
+            "cloudpickle",
+            "pydantic",
         ],
         extra_packages=["./happy_shopper"],
     )
