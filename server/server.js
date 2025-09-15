@@ -34,7 +34,7 @@ app.post("/api/chat/send-message", async (req, res) => {
   try {
     const { message, userId, sessionId, cartId } = req.body;
 
-    if (!message || !userId || !sessionId || !cartId) {
+    if (!message || !userId || !cartId) {
       return res.status(400).json({ success: false, message: "Missing required fields." });
     }
 
@@ -46,7 +46,7 @@ app.post("/api/chat/send-message", async (req, res) => {
       class_method: "async_stream_query",
       input: {
         user_id: userId,
-        session_id: sessionId,
+        session_id: sessionId ?? "",
         message: finalMessage,
       },
     };
