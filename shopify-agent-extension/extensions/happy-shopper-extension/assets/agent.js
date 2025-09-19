@@ -213,11 +213,11 @@
             currentDrawer.innerHTML = newDrawer.innerHTML;
           }
 
-          // Replace cart count
-          const newCount = doc.querySelector(".cart-count-bubble");
-          const currentCount = document.querySelector(".cart-count-bubble");
-          if (newCount && currentCount) {
-            currentCount.innerHTML = newCount.innerHTML;
+          // Replace cart icon bubble
+          const newCartIcon = doc.querySelector("#cart-icon-bubble");
+          const currentCartIcon = document.querySelector("#cart-icon-bubble");
+          if (newCartIcon && currentCartIcon) {
+            currentCartIcon.innerHTML = newCartIcon.innerHTML;
           }
         } catch (error) {
           console.error("Error in UI.refreshCartUI: ", error);
