@@ -2,30 +2,19 @@
 
 client_id = "fe4a787301dae30d67772b49c11f9196"
 name = "happy-shopper"
-handle = "happy-shopper-99"
+application_url = "https://example.com"
 embedded = true
-application_url = "https://c91cdab41601.ngrok-free.app"
+handle = "happy-shopper-99"
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [webhooks]
-api_version = "2025-07"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
+api_version = "2025-10"
 
 [access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://c91cdab41601.ngrok-free.app/auth/callback", "https://c91cdab41601.ngrok-free.app/auth/shopify/callback", "https://c91cdab41601.ngrok-free.app/api/auth/callback"]
-
-[pos]
-embedded = false
+redirect_urls = [ "https://example.com/api/auth" ]
