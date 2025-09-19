@@ -283,6 +283,8 @@
           '[data-suggestion-group="true"]',
         );
 
+        if (suggestionGroups.length === 0) return;
+
         suggestionGroups.forEach((group) => {
           const suggestionButtons = group.querySelectorAll("button");
           suggestionButtons.forEach((button) => {
@@ -307,11 +309,6 @@
             if (!isLatestGroup) {
               // Gray out historical suggestions
               ShopifyAgent.Util.grayOutSuggestionButton(button);
-            } else {
-              // Keep latest suggestions active and clickable
-              // button.className =
-              //   "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
-              // button.disabled = false;
             }
           });
         });
