@@ -12,6 +12,7 @@
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
     },
+    WELCOME_MESSAGE: "👋 Hi there! How can I help you today?",
   };
 
   const ShopifyAgent = {
@@ -59,11 +60,7 @@
 
         // Send on enter key
         chatInput.addEventListener("keydown", (e) => {
-          if (
-            e.key === "Enter" &&
-            chatInput.value.trim() !== "" &&
-            !chatInput.disabled
-          ) {
+          if (e.key === "Enter" && this.isInputValid()) {
             ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
 
             // Hide keyboard on mobile
@@ -76,11 +73,7 @@
 
         // Send on click
         sendButton.addEventListener("click", () => {
-          if (
-            chatInput.value.trim() !== "" &&
-            !chatInput.disabled &&
-            !sendButton.disabled
-          ) {
+          if (this.isInputValid()) {
             ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
 
             // Focus input after sending on mobile
@@ -145,20 +138,9 @@
       showTypingIndicator() {
         const { messagesContainer } = this.elements;
 
-        const typingIndicator = document.createElement("div");
-
-        typingIndicator.dataset.typingIndicator = "true";
-
-        typingIndicator.className =
-          "flex items-center gap-1.5 px-4 py-5 rounded-md bg-gray-100 self-start text-xl";
-
-        typingIndicator.innerHTML = `
-          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both]"></span>
-          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both] [animation-delay:0.2s]"></span>
-          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both] [animation-delay:0.4s]"></span>
-        `;
-
+        const typingIndicator = ShopifyAgent.Util.createTypingIndicator();
         messagesContainer.appendChild(typingIndicator);
+
         this.scrollToBottom();
         this.disableInput();
       },
@@ -174,6 +156,16 @@
           typingIndicator.remove();
         }
         this.enableInput();
+      },
+
+      isInputValid() {
+        const { chatInput, sendButton } = this.elements;
+
+        return (
+          chatInput.value.trim() !== "" &&
+          !chatInput.disabled &&
+          !sendButton.disabled
+        );
       },
 
       disableInput() {
@@ -236,7 +228,7 @@
         let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
 
         // Add user message to chat and clear input
-        ShopifyAgent.Message.addMessage(userMessage, "user", messagesContainer);
+        this.addMessage(userMessage, "user", messagesContainer);
         chatInput.value = "";
 
         // Show typing indicator
@@ -269,70 +261,21 @@
       },
 
       addMessage(messageContent, messageSender, messagesContainer) {
-        const messageElement = document.createElement("div");
-
-        messageElement.className = `max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words ${
-          messageSender === "model"
-            ? "bg-gray-100 text-gray-700 self-start"
-            : "self-end bg-violet-500 text-white"
-        }`;
-        messageElement.innerHTML = this.formatMessageContent(messageContent);
+        const messageElement = ShopifyAgent.Util.createMessageElement(
+          messageContent,
+          messageSender,
+        );
         messagesContainer.appendChild(messageElement);
 
         ShopifyAgent.UI.scrollToBottom();
       },
 
       addSuggestions(suggestions, messagesContainer) {
-        const suggestionsContainer = document.createElement("div");
-        suggestionsContainer.className = "flex flex-col gap-2 mt-3 mb-2";
-        suggestionsContainer.dataset.suggestionGroup = "true";
+        const suggestionGroup =
+          ShopifyAgent.Util.createSuggestionGroup(suggestions);
+        messagesContainer.appendChild(suggestionGroup);
 
-        suggestions.forEach((suggestion, index) => {
-          const suggestionButton = document.createElement("button");
-          suggestionButton.className =
-            "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
-
-          suggestionButton.innerHTML = this.formatMessageContent(suggestion);
-
-          // Track which suggestion this is
-          suggestionButton.dataset.suggestionIndex = index;
-
-          // Store original text for sending
-          suggestionButton.dataset.originalText = suggestion;
-
-          suggestionButton.addEventListener("click", () => {
-            // Update suggestion states before sending message
-            this.updateSuggestionStates(index, suggestionsContainer);
-
-            // Use original text for sending, not the formatted HTML
-            const chatInput = ShopifyAgent.UI.elements.chatInput;
-            chatInput.value = suggestion;
-            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
-          });
-
-          suggestionsContainer.appendChild(suggestionButton);
-        });
-
-        messagesContainer.appendChild(suggestionsContainer);
         ShopifyAgent.UI.scrollToBottom();
-      },
-
-      updateSuggestionStates(clickedIndex, suggestionsContainer) {
-        const suggestionButtons =
-          suggestionsContainer.querySelectorAll("button");
-
-        suggestionButtons.forEach((button, index) => {
-          if (index === clickedIndex) {
-            // Keep clicked suggestion purple/active
-            button.className =
-              "text-left p-3 rounded-lg bg-violet-500 text-white text-sm transition-colors cursor-pointer";
-          } else {
-            // Gray out other suggestions
-            button.className =
-              "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
-            button.disabled = true;
-          }
-        });
       },
 
       grayOutAllSuggestions(messagesContainer) {
@@ -343,9 +286,7 @@
         suggestionGroups.forEach((group) => {
           const suggestionButtons = group.querySelectorAll("button");
           suggestionButtons.forEach((button) => {
-            button.className =
-              "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
-            button.disabled = true;
+            ShopifyAgent.Util.grayOutSuggestionButton(button);
           });
         });
       },
@@ -360,78 +301,20 @@
         // Gray out all suggestion groups except the last one (most recent)
         suggestionGroups.forEach((group, index) => {
           const isLatestGroup = index === suggestionGroups.length - 1;
-          const suggestionButtons = group.querySelectorAll("button");
 
+          const suggestionButtons = group.querySelectorAll("button");
           suggestionButtons.forEach((button) => {
             if (!isLatestGroup) {
               // Gray out historical suggestions
-              button.className =
-                "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
-              button.disabled = true;
+              ShopifyAgent.Util.grayOutSuggestionButton(button);
             } else {
               // Keep latest suggestions active and clickable
-              button.className =
-                "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
-              button.disabled = false;
+              // button.className =
+              //   "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
+              // button.disabled = false;
             }
           });
         });
-      },
-
-      formatMessageContent(messageContent) {
-        if (!messageContent) return "";
-
-        let formatted = messageContent;
-
-        // 1. Format links: [text](url) -> <a href="url">text</a>
-        formatted = formatted.replace(
-          /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-violet-600 hover:text-violet-800 underline">$1</a>',
-        );
-
-        // 2. Format bold text: **text** -> <strong>text</strong>
-        formatted = formatted.replace(
-          /\*\*([^*]+)\*\*/g,
-          '<strong class="font-semibold">$1</strong>',
-        );
-
-        // 3. Format unordered lists: lines starting with "- " or "* "
-        formatted = formatted.replace(
-          /^[\s]*[-*]\s+(.+)$/gm,
-          '<li class="ml-4 list-disc list-inside">$1</li>',
-        );
-
-        // 4. Format ordered lists: lines starting with "1. ", "2. ", etc.
-        formatted = formatted.replace(
-          /^[\s]*\d+\.\s+(.+)$/gm,
-          '<li class="ml-4 list-decimal list-inside">$1</li>',
-        );
-
-        // 5. Wrap consecutive list items in proper list containers
-        // Handle unordered lists
-        formatted = formatted.replace(
-          /(<li class="ml-4 list-disc[^"]*">[^<]*<\/li>[\s\n]*)+/g,
-          (match) => {
-            return '<ul class="my-2 space-y-1">' + match + "</ul>";
-          },
-        );
-
-        // Handle ordered lists
-        formatted = formatted.replace(
-          /(<li class="ml-4 list-decimal[^"]*">[^<]*<\/li>[\s\n]*)+/g,
-          (match) => {
-            return '<ol class="my-2 space-y-1">' + match + "</ol>";
-          },
-        );
-
-        // 6. Convert line breaks to <br> tags for proper spacing
-        formatted = formatted.replace(/\n/g, "<br>");
-
-        // 7. Clean up extra spacing around lists
-        formatted = formatted.replace(/<br>(<[uo]l)/g, "$1");
-        formatted = formatted.replace(/(<\/[uo]l>)<br>/g, "$1");
-
-        return formatted;
       },
 
       parseMessageContent(messageContent, messagesContainer) {
@@ -525,10 +408,7 @@
       },
 
       async fetchChatHistory(userId, sessionId, messagesContainer) {
-        const loadingMessage = document.createElement("div");
-        loadingMessage.className =
-          "max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words bg-gray-100 text-gray-700 self-start";
-        loadingMessage.textContent = "Loading conversation history...";
+        const loadingMessage = ShopifyAgent.Util.createLoadingMessage();
         messagesContainer.appendChild(loadingMessage);
 
         const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-history`;
@@ -599,19 +479,171 @@
     },
 
     Util: {
-      extractUserMessage(message) {
-        const parts = message.split("user_message=");
-        return parts.length > 1 ? parts[1].trim() : message;
+      extractUserMessage(userMessage) {
+        const parts = userMessage.split("user_message=");
+        return parts.length > 1 ? parts[1].trim() : userMessage;
       },
 
       showWelcomeMessage() {
         ShopifyAgent.UI.removeTypingIndicator();
-        const welcomeMessage = "👋 Hi there! How can I help you today?";
         ShopifyAgent.Message.addMessage(
-          welcomeMessage,
+          CONFIG.WELCOME_MESSAGE,
           "model",
           ShopifyAgent.UI.elements.messagesContainer,
         );
+      },
+
+      createTypingIndicator() {
+        const typingIndicator = document.createElement("div");
+
+        typingIndicator.dataset.typingIndicator = "true";
+
+        typingIndicator.className =
+          "flex items-center gap-1.5 px-4 py-5 rounded-md bg-gray-100 self-start text-xl";
+
+        typingIndicator.innerHTML = `
+          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both]"></span>
+          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both] [animation-delay:0.2s]"></span>
+          <span class="w-3 h-3 rounded-full bg-violet-500 inline-block [animation:typing_1.4s_infinite_both] [animation-delay:0.4s]"></span>
+        `;
+
+        return typingIndicator;
+      },
+
+      createLoadingMessage() {
+        const loadingMessage = document.createElement("div");
+        loadingMessage.className =
+          "max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words bg-gray-100 text-gray-700 self-start";
+        loadingMessage.textContent = "Loading conversation history...";
+
+        return loadingMessage;
+      },
+
+      createMessageElement(messageContent, messageSender) {
+        const messageElement = document.createElement("div");
+
+        messageElement.className = `max-w-[80%] px-4 py-3 rounded-md text-xl leading-snug break-words ${
+          messageSender === "model"
+            ? "bg-gray-100 text-gray-700 self-start"
+            : "self-end bg-violet-500 text-white"
+        }`;
+        messageElement.innerHTML = this.formatMessageContent(messageContent);
+
+        return messageElement;
+      },
+
+      createSuggestionGroup(suggestions) {
+        const suggestionGroup = document.createElement("div");
+        suggestionGroup.className = "flex flex-col gap-2 mt-3 mb-2";
+        suggestionGroup.dataset.suggestionGroup = "true";
+
+        suggestions.forEach((suggestion, index) => {
+          const suggestionButton = document.createElement("button");
+          suggestionButton.className =
+            "text-left p-3 rounded-lg bg-violet-200 hover:bg-violet-300 text-gray-700 text-sm transition-colors cursor-pointer";
+
+          suggestionButton.innerHTML = this.formatMessageContent(suggestion);
+
+          // Track which suggestion this is
+          suggestionButton.dataset.suggestionIndex = index;
+
+          // Store original text for sending
+          suggestionButton.dataset.originalText = suggestion;
+
+          suggestionButton.addEventListener("click", () => {
+            // Update suggestion state before sending message
+            this.updateSuggestionState(index, suggestionGroup);
+
+            // Use original text for sending, not the formatted HTML
+            ShopifyAgent.UI.elements.chatInput.value = suggestion;
+            ShopifyAgent.Message.sendMessage(
+              ShopifyAgent.UI.elements.chatInput,
+              ShopifyAgent.UI.elements.messagesContainer,
+            );
+          });
+
+          suggestionGroup.appendChild(suggestionButton);
+        });
+        return suggestionGroup;
+      },
+
+      updateSuggestionState(clickedIndex, suggestionGroup) {
+        const suggestionButtons = suggestionGroup.querySelectorAll("button");
+
+        suggestionButtons.forEach((button, index) => {
+          if (index === clickedIndex) {
+            // Keep clicked suggestion purple/active
+            button.className =
+              "text-left p-3 rounded-lg bg-violet-500 text-white text-sm transition-colors cursor-pointer";
+          } else {
+            // Gray out other suggestions
+            button.className =
+              "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+            button.disabled = true;
+          }
+        });
+      },
+
+      grayOutSuggestionButton(suggestionButton) {
+        suggestionButton.className =
+          "text-left p-3 rounded-lg bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+        suggestionButton.disabled = true;
+      },
+
+      formatMessageContent(messageContent) {
+        if (!messageContent) return "";
+
+        let formatted = messageContent;
+
+        // 1. Format links: [text](url) -> <a href="url">text</a>
+        formatted = formatted.replace(
+          /\[([^\]]+)\]\(([^)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-violet-600 hover:text-violet-800 underline">$1</a>',
+        );
+
+        // 2. Format bold text: **text** -> <strong>text</strong>
+        formatted = formatted.replace(
+          /\*\*([^*]+)\*\*/g,
+          '<strong class="font-semibold">$1</strong>',
+        );
+
+        // 3. Format unordered lists: lines starting with "- " or "* "
+        formatted = formatted.replace(
+          /^[\s]*[-*]\s+(.+)$/gm,
+          '<li class="ml-4 list-disc list-inside">$1</li>',
+        );
+
+        // 4. Format ordered lists: lines starting with "1. ", "2. ", etc.
+        formatted = formatted.replace(
+          /^[\s]*\d+\.\s+(.+)$/gm,
+          '<li class="ml-4 list-decimal list-inside">$1</li>',
+        );
+
+        // 5. Wrap consecutive list items in proper list containers
+        // Handle unordered lists
+        formatted = formatted.replace(
+          /(<li class="ml-4 list-disc[^"]*">[^<]*<\/li>[\s\n]*)+/g,
+          (match) => {
+            return '<ul class="my-2 space-y-1">' + match + "</ul>";
+          },
+        );
+
+        // Handle ordered lists
+        formatted = formatted.replace(
+          /(<li class="ml-4 list-decimal[^"]*">[^<]*<\/li>[\s\n]*)+/g,
+          (match) => {
+            return '<ol class="my-2 space-y-1">' + match + "</ol>";
+          },
+        );
+
+        // 6. Convert line breaks to <br> tags for proper spacing
+        formatted = formatted.replace(/\n/g, "<br>");
+
+        // 7. Clean up extra spacing around lists
+        formatted = formatted.replace(/<br>(<[uo]l)/g, "$1");
+        formatted = formatted.replace(/(<\/[uo]l>)<br>/g, "$1");
+
+        return formatted;
       },
     },
 
@@ -632,7 +664,7 @@
         cartId = await this.API.fetchCartId();
 
         if (cartId) {
-          sessionStorage.setItem("shopifyAgentCartId", cartId);
+          sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
         }
       }
 
