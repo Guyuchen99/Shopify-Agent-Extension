@@ -198,19 +198,7 @@
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
 
-          // Replace cart drawer
-          const newDrawer = doc.querySelector(".cart-drawer");
-          const currentDrawer = document.querySelector(".cart-drawer");
-          if (newDrawer && currentDrawer) {
-            currentDrawer.innerHTML = newDrawer.innerHTML;
-          }
-
-          // Replace cart icon bubble
-          const newCartIcon = doc.querySelector("#cart-icon-bubble");
-          const currentCartIcon = document.querySelector("#cart-icon-bubble");
-          if (newCartIcon && currentCartIcon) {
-            currentCartIcon.innerHTML = newCartIcon.innerHTML;
-          }
+          document.body.innerHTML = doc.body.innerHTML;
         } catch (error) {
           console.error("Error in UI.refreshCartUI: ", error);
         }
