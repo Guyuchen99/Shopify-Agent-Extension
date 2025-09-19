@@ -22,11 +22,12 @@ class SuggestionAgentOutput(BaseModel):
 
 search_agent = Agent(
     name="search_agent",
-    model="gemini-2.5-flash-lite",
+    model="gemini-2.5-flash",
     description="Perform Google Search for external information retrieval",
     instruction=SearchAgentInstruction,
     tools=[google_search],
 )
+
 
 shopify_agent = Agent(
     name="shopify_agent",
@@ -37,7 +38,7 @@ shopify_agent = Agent(
         AgentTool(agent=search_agent),
         MCPToolset(
             connection_params=StreamableHTTPConnectionParams(
-                url="https://ycgraphixs-testing.myshopify.com/api/mcp",
+                url="https://ycgraphixs-dev.myshopify.com/api/mcp",
             ),
             tool_filter=["search_shop_catalog", "get_cart", "update_cart"],
             errlog=None,
@@ -48,7 +49,7 @@ shopify_agent = Agent(
 
 suggestion_agent = Agent(
     name="suggestion_agent",
-    model="gemini-2.5-flash-lite",
+    model="gemini-2.5-flash",
     description="Formats shopify agent results into final user-friendly output with prompt suggestions",
     instruction=SuggestionAgentInstruction,
     output_schema=SuggestionAgentOutput,

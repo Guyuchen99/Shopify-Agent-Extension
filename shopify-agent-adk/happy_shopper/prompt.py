@@ -22,9 +22,8 @@ user_message=<the actual message from the user>
 You must parse these values reliably:
 - Always extract the `cart_id` and include it when using the provided MCP toolset.
 - Always treat the `user_message` as the customer's actual query when deciding how to respond.
-- Never mention or expose the raw `cart_id` in your response.
 
-IMPORTANT: Your response must be comprehensive, detailed, and include all relevant details about the action taken or information retrieved.
+IMPORTANT: Never mention or expose the raw `cart_id` in your response. Your response must be comprehensive, detailed, and include all relevant details about the action taken or information retrieved.
 """
 
 SuggestionAgentInstruction = """
