@@ -35,7 +35,7 @@ shopify_agent = Agent(
     description="A personalized shopping agent for YC Graphixs's store",
     instruction=ShopifyAgentInstruction,
     tools=[
-        AgentTool(agent=search_agent),
+        AgentTool(agent=search_agent, skip_summarization=True),
         MCPToolset(
             connection_params=StreamableHTTPConnectionParams(
                 url="https://ycgraphixs-dev.myshopify.com/api/mcp",
