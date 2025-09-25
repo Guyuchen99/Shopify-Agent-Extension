@@ -2,70 +2,153 @@
 
 <div class="shopify-agent-container fixed bottom-16 right-16 z-50">
   <!-- Floating Agent Bubble -->
-  <div class="shopify-agent-bubble h-36 w-36 cursor-pointer overflow-hidden rounded-full shadow-lg transition-transform hover:scale-105">
+  <div class="shopify-agent-bubble flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden bg-transparent transition-transform hover:scale-105">
     <img
       src="{{ 'agent_icon.jpg' | asset_url }}"
       alt="Shopify Agent Icon"
-      class="block h-full w-full rounded-full object-cover"
-      width="144x"
-      height="144px"
+      class="animate-glowing h-3/4 w-3/4 rounded-full border border-gray-50 object-cover"
+      width="112px"
+      height="112px"
     >
   </div>
 
   <!-- Chat Window -->
-  <div class="shopify-agent-window pointer-events-none absolute bottom-full right-0 z-50 mb-4 flex h-[425px] w-[325px] flex-col overflow-hidden rounded-3xl border border-black bg-white opacity-0 shadow-xl transition-all duration-200">
+  <div class="shopify-agent-window pointer-events-none absolute bottom-full right-0 z-50 mb-4 flex h-[475px] w-[350px] flex-col overflow-hidden rounded-2xl border border-{{ block.settings.agent_theme_color }}-600 bg-white opacity-0 shadow-xl transition-all duration-200">
     <!-- Header -->
-    <div class="shopify-agent-header flex flex-none items-center justify-between border-b border-black px-6 py-4 text-3xl font-semibold text-black">
-      <span>Shopify Agent</span>
-      <button
-        type="button"
-        class="shopify-agent-close cursor-pointer border-none p-0 leading-none text-gray-600 hover:text-black"
-        aria-label="Close Chat"
-      >
-        ✕
-      </button>
+    <div class="shopify-agent-header flex items-center justify-between border-b border-{{ block.settings.agent_theme_color }}-600 bg-{{ block.settings.agent_theme_color }}-500 p-4 font-semibold">
+      <div class="flex items-center gap-2">
+        <img
+          src="https://p1.hiclipart.com/preview/801/155/669/bag-icon-line-icon-shopify-icon-social-icon-transparent-icon-electric-blue-symbol-number-logo-png-clipart.jpg"
+          alt="Shopify Agent"
+          class="h-8 w-8"
+          width="32px"
+          height="32px"
+        >
+        <span class="text-lg font-semibold text-white">Shopify Agent</span>
+      </div>
+
+      <div class="-mr-2 flex justify-between">
+        <button
+          type="button"
+          class="shopify-agent-options m-0 flex h-8 w-8 cursor-pointer items-center justify-center text-white"
+          aria-label="More Options"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-ellipsis-icon lucide-ellipsis hover:scale-110"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="1" />
+            <circle
+              cx="19"
+              cy="12"
+              r="1" />
+            <circle
+              cx="5"
+              cy="12"
+              r="1" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="shopify-agent-close m-0 flex h-8 w-8 cursor-pointer items-center justify-center text-white"
+          aria-label="Close Chat"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-x-icon lucide-x hover:scale-110"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Messages -->
-    <div class="shopify-agent-messages flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-      <!-- messages will go here -->
-    </div>
+    <div class="shopify-agent-messages flex flex-1 flex-col gap-3 overflow-y-auto p-4"></div>
 
     <!-- Input -->
-    <div class="shopify-agent-input flex flex-none items-center gap-4 border-t border-black px-6 py-4">
-      <input
-        type="text"
-        placeholder="Ask me anything..."
-        class="flex-1 rounded-3xl border-2 border-gray-500 px-4 py-4 text-xl outline-none focus:border-violet-500 focus:ring-0"
-      >
-      <button
-        type="button"
-        class="shopify-agent-send flex h-10 w-10 cursor-pointer items-center justify-center text-violet-700"
-        aria-label="Send message"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+    <div class="shopify-agent-input flex items-center border-t border-{{ block.settings.agent_theme_color }}-600 px-4 py-3">
+      <div class="relative flex-1">
+        <!-- Input -->
+        <input
+          type="text"
+          placeholder="Ask me anything..."
+          class="peer w-full rounded-2xl border-2 border-{{ block.settings.agent_theme_color }}-400 bg-{{ block.settings.agent_theme_color }}-100 py-3 pl-10 pr-20 text-sm text-gray-800 outline-none focus:border-{{ block.settings.agent_theme_color }}-600"
         >
-          <line
-            x1="22"
-            y1="2"
-            x2="11"
-            y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
+
+        <button
+          type="button"
+          class="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center text-{{ block.settings.agent_theme_color }}-400 hover:text-{{ block.settings.agent_theme_color }}-600 peer-focus:text-{{ block.settings.agent_theme_color }}-600"
+          aria-label="Add"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-plus-icon lucide-plus hover:scale-110"
+          >
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="shopify-agent-send absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center text-{{ block.settings.agent_theme_color }}-400 hover:text-{{ block.settings.agent_theme_color }}-600 peer-focus:text-{{ block.settings.agent_theme_color }}-600"
+          aria-label="Send message"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-send-icon lucide-send hover:scale-110"
+          >
+            <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+            <path d="m21.854 2.147-10.94 10.939" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+  window.ShopifyAgentConfig = {
+    THEME_COLOR: '{{ block.settings.agent_theme_color }}',
+  };
+</script>
 
 <script src="{{ 'agent.js' | asset_url }}" defer></script>
 
@@ -75,16 +158,60 @@
   "target": "body",
   "settings": [
     {
-      "type": "color",
-      "id": "agent_bubble_color",
-      "label": "Agent Bubble Color",
-      "default": "#5046e4"
-    },
-    {
-      "type": "text",
-      "id": "agent_welcome_message",
-      "label": "Agent Welcome Message",
-      "default": "👋 Hi there! How can I help you today?"
+      "type": "select",
+      "id": "agent_theme_color",
+      "label": "Agent Theme Color",
+      "default": "violet",
+      "options": [
+        {
+          "value": "red",
+          "label": "red"
+        },
+        {
+          "value": "orange",
+          "label": "orange"
+        },
+        {
+          "value": "lime",
+          "label": "lime"
+        },
+        {
+          "value": "green",
+          "label": "green"
+        },
+        {
+          "value": "teal",
+          "label": "teal"
+        },
+        {
+          "value": "cyan",
+          "label": "cyan"
+        },
+        {
+          "value": "blue",
+          "label": "blue"
+        },
+        {
+          "value": "indigo",
+          "label": "indigo"
+        },
+        {
+          "value": "violet",
+          "label": "violet"
+        },
+        {
+          "value": "purple",
+          "label": "purple"
+        },
+        {
+          "value": "fuchsia",
+          "label": "fuchsia"
+        },
+        {
+          "value": "pink",
+          "label": "pink"
+        }
+      ]
     }
   ],
   "enabled_on": {

@@ -16,3 +16,31 @@
     transform: scale(1);
   }
 }
+
+.animate-typing {
+  animation: typing 1.4s infinite both;
+}
+
+.animate-typing:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.animate-typing:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes glowing {
+  0% {
+    box-shadow: 0px 0px 0px 0px #8cf4f2;
+  }
+  80% {
+    box-shadow: 0px 0px 18px 2px #531dab;
+  }
+  100% {
+    box-shadow: 0px 0px 18px 2px #531dab;
+  }
+}
+
+.animate-glowing {
+  animation: glowing 2.5s linear 0.75s infinite alternate;
+}
