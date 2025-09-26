@@ -14,6 +14,7 @@
       SCROLL_DELAY: 100,
     },
     WELCOME_MESSAGE: "👋 Hi there! How can I help you today?",
+    SHOPIFY_URL: "https://ycgraphixs-dev.myshopify.com",
     THEME_COLOR: window.ShopifyAgentConfig?.THEME_COLOR,
   };
 
@@ -600,7 +601,7 @@
           .replace(/'/g, "");
 
         productCard.addEventListener("click", () => {
-          const url = `https://ycgraphixs-dev.myshopify.com/products/${slug}`;
+          const url = `${CONFIG.SHOPIFY_URL}/products/${slug}`;
           window.open(url, "_blank");
         });
 
