@@ -1,19 +1,19 @@
 {{ 'tailwind.build.css' | asset_url | stylesheet_tag }}
 
-<div class="shopify-agent-container fixed bottom-16 right-16 z-50">
+<div class="shopify-agent-container fixed bottom-7 right-10 z-50">
   <!-- Floating Agent Bubble -->
   <div class="shopify-agent-bubble flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden bg-transparent transition-transform hover:scale-105">
     <img
       src="{{ 'agent_icon.jpg' | asset_url }}"
       alt="Shopify Agent Icon"
-      class="animate-glowing h-3/4 w-3/4 rounded-full border border-gray-50 object-cover"
+      class="animate-glowing h-3/4 w-3/4 rounded-full border border-gray-200 object-cover"
       width="112px"
       height="112px"
     >
   </div>
 
   <!-- Chat Window -->
-  <div class="shopify-agent-window pointer-events-none absolute bottom-full right-0 z-50 mb-4 flex h-[475px] w-[350px] flex-col overflow-hidden rounded-2xl border border-{{ block.settings.agent_theme_color }}-600 bg-white opacity-0 shadow-xl transition-all duration-200">
+  <div class="shopify-agent-window pointer-events-none absolute bottom-full right-0 z-50 mb-1 flex h-[475px] w-[350px] flex-col overflow-hidden rounded-2xl border border-{{ block.settings.agent_theme_color }}-600 bg-white opacity-0 shadow-xl transition-all duration-200">
     <!-- Header -->
     <div class="shopify-agent-header flex items-center justify-between border-b border-{{ block.settings.agent_theme_color }}-600 bg-{{ block.settings.agent_theme_color }}-500 p-4 font-semibold">
       <div class="flex items-center gap-2">
@@ -27,7 +27,7 @@
         <span class="text-lg font-semibold text-white">Shopify Agent</span>
       </div>
 
-      <div class="-mr-2 flex justify-between">
+      <div class="-mr-2 flex justify-between gap-0">
         <button
           type="button"
           class="shopify-agent-options m-0 flex h-8 w-8 cursor-pointer items-center justify-center text-white"

@@ -513,12 +513,12 @@
         typingIndicator.dataset.typingIndicator = "true";
 
         typingIndicator.className =
-          "flex items-center gap-1.5 px-4 py-5 rounded-md bg-gray-100 self-start text-xl";
+          "flex items-center gap-1.5 px-3 py-3.5 rounded-md bg-gray-100 self-start";
 
         typingIndicator.innerHTML = `
-          <span class="w-3 h-3 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
-          <span class="w-3 h-3 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
-          <span class="w-3 h-3 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
         `;
 
         return typingIndicator;
@@ -527,7 +527,7 @@
       createLoadingMessage() {
         const loadingMessage = document.createElement("div");
         loadingMessage.className =
-          "max-w-[90%] px-4 py-3 rounded-md text-xl leading-snug break-words bg-gray-100 text-gray-700 self-start";
+          "max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start";
         loadingMessage.textContent = "Loading conversation history...";
 
         return loadingMessage;
