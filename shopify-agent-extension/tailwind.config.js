@@ -8,7 +8,6 @@ export default {
       variants: ["hover", "focus"],
     },
   ],
-  important: true,
   theme: {
     extend: {},
   },

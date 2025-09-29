@@ -513,8 +513,7 @@
 
         typingIndicator.dataset.typingIndicator = "true";
 
-        typingIndicator.className =
-          "flex items-center gap-1.5 px-3 py-3.5 rounded-md bg-gray-100 self-start";
+        typingIndicator.className = `flex items-center gap-1.5 px-3 py-3.5 rounded-md bg-gray-100 self-start border border-${CONFIG.THEME_COLOR}-700`;
 
         typingIndicator.innerHTML = `
           <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
@@ -527,8 +526,7 @@
 
       createLoadingMessage() {
         const loadingMessage = document.createElement("div");
-        loadingMessage.className =
-          "max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start";
+        loadingMessage.className = `max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`;
         loadingMessage.textContent = "Loading conversation history...";
 
         return loadingMessage;
@@ -539,7 +537,7 @@
 
         messageElement.className = `max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words ${
           messageSender === "model"
-            ? "bg-gray-100 text-gray-700 self-start"
+            ? `bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`
             : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white`
         }`;
 
@@ -596,9 +594,10 @@
 
         const slug = product.title
           .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/\./g, "-")
-          .replace(/'/g, "");
+          .replace(/\s+/g, "-") // replace spaces with dashes
+          .replace(/\./g, "-") // replace periods with dashes
+          .replace(/'/g, "") // remove apostrophes
+          .replace(/&/g, ""); // remove ampersands
 
         productCard.addEventListener("click", () => {
           const url = `${CONFIG.SHOPIFY_URL}/products/${slug}`;
