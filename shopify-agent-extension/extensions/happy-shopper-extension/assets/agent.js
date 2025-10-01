@@ -6,6 +6,7 @@
       USER_ID: "shopifyAgentUserId",
       CART_ID: "shopifyAgentCartId",
       SESSION_ID: "shopifyAgentSessionId",
+      CHAT_OPEN: "shopifyAgentChatOpen",
       LATEST_PRODUCTS: "shopifyAgentLatestProducts",
     },
     TIMING: {
@@ -90,43 +91,73 @@
         window.addEventListener("resize", () => this.scrollToBottom());
       },
 
-      toggleChatWindow() {
+      openChatWindow() {
         const { chatWindow, chatInput } = this.elements;
 
-        const isOpen = chatWindow.classList.toggle("opacity-100");
+        chatWindow.classList.add(
+          "opacity-100",
+          "pointer-events-auto",
+          "translate-y-0",
+        );
+        chatWindow.classList.remove(
+          "opacity-0",
+          "pointer-events-none",
+          "translate-y-2",
+        );
 
-        // Toggle open/close classes
-        chatWindow.classList.toggle("pointer-events-auto", isOpen);
-        chatWindow.classList.toggle("translate-y-0", isOpen);
-        chatWindow.classList.toggle("opacity-0", !isOpen);
-        chatWindow.classList.toggle("pointer-events-none", !isOpen);
-        chatWindow.classList.toggle("translate-y-2", !isOpen);
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.CHAT_OPEN, "true");
 
-        if (isOpen) {
-          // Focus input & lock scroll on mobile
-          if (this.isMobile) {
-            document.body.classList.add(
-              "overflow-hidden",
-              "fixed",
-              "w-full",
-              "h-full",
-            );
-            setTimeout(() => chatInput.focus(), CONFIG.TIMING.KEYBOARD_DELAY);
-          } else {
-            chatInput.focus();
-          }
-          this.scrollToBottom();
-        } else {
-          // Unlock scroll when closed
-          document.body.classList.remove(
+        // Focus input & lock scroll on mobile
+        if (this.isMobile) {
+          document.body.classList.add(
             "overflow-hidden",
             "fixed",
             "w-full",
             "h-full",
           );
-          if (this.isMobile) {
-            chatInput.blur();
-          }
+          setTimeout(() => chatInput.focus(), CONFIG.TIMING.KEYBOARD_DELAY);
+        } else {
+          chatInput.focus();
+        }
+        this.scrollToBottom();
+      },
+
+      closeChatWindow() {
+        const { chatWindow, chatInput } = this.elements;
+
+        chatWindow.classList.remove(
+          "opacity-100",
+          "pointer-events-auto",
+          "translate-y-0",
+        );
+        chatWindow.classList.add(
+          "opacity-0",
+          "pointer-events-none",
+          "translate-y-2",
+        );
+
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.CHAT_OPEN, "false");
+
+        // Unlock scroll when closed
+        document.body.classList.remove(
+          "overflow-hidden",
+          "fixed",
+          "w-full",
+          "h-full",
+        );
+
+        if (this.isMobile) {
+          chatInput.blur();
+        }
+      },
+
+      toggleChatWindow() {
+        const { chatWindow } = this.elements;
+        const isOpen = chatWindow.classList.contains("opacity-100");
+        if (isOpen) {
+          this.closeChatWindow();
+        } else {
+          this.openChatWindow();
         }
       },
 
@@ -538,7 +569,7 @@
         messageElement.className = `max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words ${
           messageSender === "model"
             ? `bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`
-            : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white`
+            : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white border border-${CONFIG.THEME_COLOR}-500 mt-3 mb-2`
         }`;
 
         if (messageSender !== "model") {
@@ -601,7 +632,7 @@
 
         productCard.addEventListener("click", () => {
           const url = `${CONFIG.SHOPIFY_URL}/products/${slug}`;
-          window.open(url, "_blank");
+          window.location.href = url;
         });
 
         return productCard;
@@ -651,7 +682,7 @@
           } else {
             // Gray out other suggestions
             button.className =
-              "max-w-[90%] text-left p-3 rounded-md bg-gray-400 text-gray-500 text-sm transition-colors cursor-default";
+              "max-w-[90%] text-left p-3 rounded-md bg-gray-200 text-slate-400 text-sm transition-colors cursor-default";
             button.disabled = true;
           }
         });
@@ -659,7 +690,7 @@
 
       grayOutSuggestionButton(suggestionButton) {
         suggestionButton.className =
-          "max-w-[90%] text-left p-3 rounded-md bg-gray-300 text-gray-500 text-sm transition-colors cursor-default";
+          "max-w-[90%] text-left p-3 rounded-md bg-gray-200 text-slate-400 text-sm transition-colors cursor-default";
         suggestionButton.disabled = true;
       },
 
@@ -752,6 +783,14 @@
       if (!container) return;
 
       this.UI.init(container);
+
+      // Restore open state across page loads
+      const wasOpen =
+        sessionStorage.getItem(CONFIG.STORAGE_KEYS.CHAT_OPEN) === "true";
+      if (wasOpen) {
+        this.UI.openChatWindow();
+      }
+
       this.UI.showTypingIndicator();
 
       // Check for existing conversation
