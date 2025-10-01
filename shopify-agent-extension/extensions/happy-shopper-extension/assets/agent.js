@@ -562,7 +562,7 @@
 
       createLoadingMessage() {
         const loadingMessage = document.createElement("div");
-        loadingMessage.className = `max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`;
+        loadingMessage.className = `max-w-[90%] px-3.5 py-3 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`;
         loadingMessage.textContent = "Loading conversation history...";
 
         return loadingMessage;
@@ -571,10 +571,10 @@
       createMessageElement(messageContent, messageSender) {
         const messageElement = document.createElement("div");
 
-        messageElement.className = `max-w-[90%] px-3 py-2 rounded-md text-md leading-snug break-words ${
+        messageElement.className = `max-w-[90%] px-3.5 py-3 rounded-md text-md leading-snug break-words ${
           messageSender === "model"
             ? `bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`
-            : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white border border-${CONFIG.THEME_COLOR}-500 mt-3 mb-2`
+            : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white border border-${CONFIG.THEME_COLOR}-500 mt-1`
         }`;
 
         if (messageSender !== "model") {
@@ -650,7 +650,7 @@
 
         suggestions.forEach((suggestion, index) => {
           const suggestionButton = document.createElement("button");
-          suggestionButton.className = `max-w-[90%] text-left p-3 rounded-md bg-${CONFIG.THEME_COLOR}-200 hover:bg-${CONFIG.THEME_COLOR}-300 text-sm text-gray-700 transition-colors cursor-pointer`;
+          suggestionButton.className = `max-w-[90%] text-left px-3.5 py-2.5 rounded-md bg-${CONFIG.THEME_COLOR}-200 hover:bg-${CONFIG.THEME_COLOR}-300 text-sm text-gray-700 transition-colors cursor-pointer`;
 
           suggestionButton.innerHTML = this.formatMessageContent(suggestion);
 
@@ -839,7 +839,6 @@
         sessionId,
         this.UI.elements.messagesContainer,
       );
-      this.UI.showTypingIndicator();
     },
   };
 
