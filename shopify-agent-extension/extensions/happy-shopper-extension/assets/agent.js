@@ -541,15 +541,20 @@
 
       createTypingIndicator() {
         const typingIndicator = document.createElement("div");
-
         typingIndicator.dataset.typingIndicator = "true";
 
-        typingIndicator.className = `flex items-center gap-1.5 px-3 py-3.5 rounded-md bg-gray-100 self-start border border-${CONFIG.THEME_COLOR}-700`;
+        typingIndicator.className = `flex items-center px-4 py-3 rounded-md bg-gray-100 self-start border border-${CONFIG.THEME_COLOR}-700 gap-0`;
 
         typingIndicator.innerHTML = `
-          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-${CONFIG.THEME_COLOR}-500 inline-block animate-typing"></span>
+          <div class="loading-animation relative w-5 h-5">
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+          </div>
+          <span class="text-base animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text leading-snug font-semibold text-transparent">Thinking</span>
         `;
 
         return typingIndicator;
@@ -834,6 +839,7 @@
         sessionId,
         this.UI.elements.messagesContainer,
       );
+      this.UI.showTypingIndicator();
     },
   };
 
