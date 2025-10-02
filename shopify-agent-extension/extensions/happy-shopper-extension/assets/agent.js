@@ -547,12 +547,12 @@
 
         typingIndicator.innerHTML = `
           <div class="loading-animation relative w-5 h-5">
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-600"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
           </div>
           <span class="text-base animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text leading-snug font-semibold text-transparent">Thinking</span>
         `;
