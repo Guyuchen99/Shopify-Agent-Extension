@@ -15,6 +15,10 @@
       SCROLL_DELAY: 100,
     },
     WELCOME_MESSAGE: "👋 Hi there! How can I help you today?",
+    AGENT_AVATAR:
+      "https://img.freepik.com/premium-vector/cute-robot-cartoon-vector-icon-illustration-techology-robot-icon-concept-isolated-premium-vector-flat-cartoon-style_138676-1474.jpg",
+    USER_AVATAR:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiLkC3N1FD4ShhqOCHpv03D00GR97kXfwmpw&s",
     SHOPIFY_URL: "https://ycgraphixs-dev.myshopify.com",
     THEME_COLOR: window.ShopifyAgentConfig?.THEME_COLOR,
   };
@@ -454,7 +458,10 @@
       },
 
       async fetchChatHistory(userId, sessionId, messagesContainer) {
-        const loadingMessage = ShopifyAgent.Util.createLoadingMessage();
+        const loadingMessage = ShopifyAgent.Util.createMessageElement(
+          "Loading conversation history...",
+          "model",
+        );
         messagesContainer.appendChild(loadingMessage);
 
         const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-history`;
@@ -548,11 +555,11 @@
         typingIndicator.innerHTML = `
           <div class="loading-animation relative h-5 w-5">
             <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
           </div>
           <span class="animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-base font-semibold leading-snug text-transparent">Thinking</span>
         `;
@@ -560,49 +567,87 @@
         return typingIndicator;
       },
 
-      createLoadingMessage() {
-        const loadingMessage = document.createElement("div");
-        loadingMessage.className = `text-md max-w-[90%] self-start break-words rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 leading-snug text-gray-700`;
-        loadingMessage.textContent = "Loading conversation history...";
-
-        return loadingMessage;
-      },
-
       createMessageElement(messageContent, messageSender) {
         const messageElement = document.createElement("div");
+        messageElement.className = `flex flex-col gap-0 ${
+          messageSender === "model" ? "items-start" : "items-end mt-2"
+        }`;
 
-        messageElement.className = `text-md max-w-[90%] break-words rounded-md px-3.5 py-3 leading-snug ${
+        const messageAvator = this.createMessageAvator(messageSender);
+
+        const messageBubble = this.createMessageBubble(
+          messageContent,
+          messageSender,
+        );
+
+        messageElement.appendChild(messageAvator);
+        messageElement.appendChild(messageBubble);
+
+        return messageElement;
+      },
+
+      createMessageAvator(messageSender) {
+        const messageAvator = document.createElement("div");
+        messageAvator.className = "flex gap-0";
+
+        if (messageSender === "model") {
+          messageAvator.innerHTML = `
+            <img
+              src="${CONFIG.AGENT_AVATAR}"
+              alt="Shopify Agent Icon"
+              class="h-10 w-10 rounded-full object-cover border border-${CONFIG.THEME_COLOR}-200"
+              width="40px"
+              height="40px"
+            />
+          `;
+        } else {
+          messageAvator.innerHTML = `
+            <img
+              src="${CONFIG.USER_AVATAR}"
+              alt="Shopify Agent Icon"
+              class="h-10 w-10 rounded-full object-cover border border-${CONFIG.THEME_COLOR}-200"
+              width="40px"
+              height="40px"
+            />
+          `;
+        }
+
+        return messageAvator;
+      },
+
+      createMessageBubble(messageContent, messageSender) {
+        const messageBubble = document.createElement("div");
+        messageBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug ${
           messageSender === "model"
-            ? `self-start border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700`
-            : `mt-1 self-end border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white`
+            ? `agent-chat-bubble ml-10  border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`
+            : `user-chat-bubble mr-10  border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white before:bg-${CONFIG.THEME_COLOR}-500 after:bg-${CONFIG.THEME_COLOR}-500`
         }`;
 
         if (messageSender !== "model") {
-          messageElement.innerHTML = this.formatMessageContent(messageContent);
+          messageBubble.innerHTML = this.formatMessageContent(messageContent);
+        } else {
+          const lines = messageContent.split(/\n+/).filter(Boolean);
 
-          return messageElement;
+          lines.forEach((line) => {
+            const lineDiv = document.createElement("div");
+            lineDiv.innerHTML = this.formatMessageContent(line);
+
+            messageBubble.appendChild(lineDiv);
+
+            const products = ShopifyAgent.Util.getLatestProducts();
+
+            const product = products.find((product) =>
+              line.includes(product.title),
+            );
+
+            if (product) {
+              const productCard = ShopifyAgent.Util.createProductCard(product);
+              messageBubble.appendChild(productCard);
+            }
+          });
         }
 
-        const lines = messageContent.split(/\n+/).filter(Boolean);
-        lines.forEach((line) => {
-          const lineDiv = document.createElement("div");
-          lineDiv.innerHTML = this.formatMessageContent(line);
-
-          messageElement.appendChild(lineDiv);
-
-          const products = ShopifyAgent.Util.getLatestProducts();
-
-          const product = products.find((product) =>
-            line.includes(product.title),
-          );
-
-          if (product) {
-            const productCard = ShopifyAgent.Util.createProductCard(product);
-            messageElement.appendChild(productCard);
-          }
-        });
-
-        return messageElement;
+        return messageBubble;
       },
 
       createProductCard(product) {
@@ -650,7 +695,7 @@
 
         suggestions.forEach((suggestion, index) => {
           const suggestionButton = document.createElement("button");
-          suggestionButton.className = `max-w-[90%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-200 px-3.5 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-${CONFIG.THEME_COLOR}-300`;
+          suggestionButton.className = `ml-10 max-w-[83%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-200 px-3.5 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-${CONFIG.THEME_COLOR}-300`;
 
           suggestionButton.innerHTML = this.formatMessageContent(suggestion);
 
@@ -683,11 +728,11 @@
         suggestionButtons.forEach((button, index) => {
           if (index === clickedIndex) {
             // Keep clicked suggestion purple/active
-            button.className = `max-w-[90%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-300 p-3 text-left text-sm text-white transition-colors`;
+            button.className = `ml-10 max-w-[83%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-300 p-3 text-left text-sm text-white transition-colors`;
           } else {
             // Gray out other suggestions
             button.className =
-              "max-w-[90%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
+              "ml-10 max-w-[83%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
             button.disabled = true;
           }
         });
@@ -695,7 +740,7 @@
 
       grayOutSuggestionButton(suggestionButton) {
         suggestionButton.className =
-          "max-w-[90%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
+          "ml-10 max-w-[83%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
         suggestionButton.disabled = true;
       },
 

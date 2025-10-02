@@ -135,3 +135,57 @@
 .animate-thinking {
   animation: thinking-gradient 3s ease-in infinite;
 }
+
+.shopify-agent-messages > div:first-child {
+  margin-top: 0;
+}
+
+.shopify-agent-messages > div:last-child {
+  margin-bottom: 0.5rem;
+}
+
+.user-chat-bubble::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  left: 100%;
+  top: 0.25rem;
+  clip-path: polygon(60% 0%, 0 100%, 0 30%);
+  z-index: 10;
+}
+
+.user-chat-bubble::after {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  left: 100%;
+  top: 0.35rem;
+  clip-path: polygon(60% 0%, 0 100%, 0 30%);
+  transform: translate(2px, -2px) scale(1.1);
+  z-index: 5;
+}
+
+.agent-chat-bubble::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  right: 100%;
+  top: 0.25rem;
+  clip-path: polygon(40% 0, 100% 100%, 100% 30%);
+  z-index: 10;
+}
+
+.agent-chat-bubble::after {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  right: 100%;
+  top: 0.35rem;
+  clip-path: polygon(40% 0, 100% 100%, 100% 30%);
+  transform: translate(-2px, -2px) scale(1.1);
+  z-index: 5;
+}

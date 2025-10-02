@@ -750,6 +750,14 @@ video {
   margin-top: 1rem;
 }
 
+.ml-10 {
+  margin-left: 2.5rem;
+}
+
+.mr-10 {
+  margin-right: 2.5rem;
+}
+
 .block {
   display: block;
 }
@@ -814,6 +822,10 @@ video {
   height: 100%;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
 .max-h-\[550px\] {
   max-height: 550px;
 }
@@ -858,6 +870,10 @@ video {
   width: 100%;
 }
 
+.w-10 {
+  width: 2.5rem;
+}
+
 .min-w-full {
   min-width: 100%;
 }
@@ -868,6 +884,10 @@ video {
 
 .max-w-\[90\%\] {
   max-width: 90%;
+}
+
+.max-w-\[83\%\] {
+  max-width: 83%;
 }
 
 .flex-1 {
@@ -936,6 +956,14 @@ video {
 
 .flex-col {
   flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
 }
 
 .items-center {
@@ -33038,6 +33066,60 @@ video {
   animation: thinking-gradient 3s ease-in infinite;
 }
 
+.shopify-agent-messages > div:first-child {
+  margin-top: 0;
+}
+
+.shopify-agent-messages > div:last-child {
+  margin-bottom: 0.5rem;
+}
+
+.user-chat-bubble::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  left: 100%;
+  top: 0.25rem;
+  clip-path: polygon(60% 0%, 0 100%, 0 30%);
+  z-index: 10;
+}
+
+.user-chat-bubble::after {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  left: 100%;
+  top: 0.35rem;
+  clip-path: polygon(60% 0%, 0 100%, 0 30%);
+  transform: translate(2px, -2px) scale(1.1);
+  z-index: 5;
+}
+
+.agent-chat-bubble::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  right: 100%;
+  top: 0.25rem;
+  clip-path: polygon(40% 0, 100% 100%, 100% 30%);
+  z-index: 10;
+}
+
+.agent-chat-bubble::after {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  right: 100%;
+  top: 0.35rem;
+  clip-path: polygon(40% 0, 100% 100%, 100% 30%);
+  transform: translate(-2px, -2px) scale(1.1);
+  z-index: 5;
+}
+
 .before\:bg-blue-500::before {
   content: var(--tw-content);
   --tw-bg-opacity: 1;
@@ -34368,6 +34450,24 @@ video {
 .before\:bg-violet-500\/95::before {
   content: var(--tw-content);
   background-color: rgb(139 92 246 / 0.95);
+}
+
+.before\:bg-gray-100::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+
+.after\:bg-violet-500::after {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(139 92 246 / var(--tw-bg-opacity, 1));
+}
+
+.after\:bg-violet-700::after {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(109 40 217 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:scale-105:hover {
