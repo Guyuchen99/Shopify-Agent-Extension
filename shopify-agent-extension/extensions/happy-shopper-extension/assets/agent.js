@@ -546,7 +546,7 @@
         typingIndicator.className = `flex items-center gap-0 self-start rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-4 py-3`;
 
         typingIndicator.innerHTML = `
-          <div class="loading-animation relative h-5 w-5>
+          <div class="loading-animation relative h-5 w-5">
             <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
