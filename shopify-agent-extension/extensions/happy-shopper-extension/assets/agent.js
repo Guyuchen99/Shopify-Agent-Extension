@@ -788,14 +788,6 @@
       if (!container) return;
 
       this.UI.init(container);
-
-      // Restore open state across page loads
-      // const wasOpen =
-      //   sessionStorage.getItem(CONFIG.STORAGE_KEYS.CHAT_OPEN) === "true";
-      // if (wasOpen) {
-      //   this.UI.openChatWindow();
-      // }
-
       this.UI.showTypingIndicator();
 
       // Check for existing conversation
