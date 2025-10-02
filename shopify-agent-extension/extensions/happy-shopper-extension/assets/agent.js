@@ -543,18 +543,18 @@
         const typingIndicator = document.createElement("div");
         typingIndicator.dataset.typingIndicator = "true";
 
-        typingIndicator.className = `flex items-center px-4 py-3 rounded-md bg-gray-100 self-start border border-${CONFIG.THEME_COLOR}-700 gap-0`;
+        typingIndicator.className = `flex items-center gap-0 self-start rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-4 py-3`;
 
         typingIndicator.innerHTML = `
-          <div class="loading-animation relative w-5 h-5">
-            <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+          <div class="loading-animation relative h-5 w-5>
+            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             <div class="loading-animation-dot absolute inset-0 w-full h-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
           </div>
-          <span class="text-base animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text leading-snug font-semibold text-transparent">Thinking</span>
+          <span class="animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-base font-semibold leading-snug text-transparent">Thinking</span>
         `;
 
         return typingIndicator;
@@ -562,7 +562,7 @@
 
       createLoadingMessage() {
         const loadingMessage = document.createElement("div");
-        loadingMessage.className = `max-w-[90%] px-3.5 py-3 rounded-md text-md leading-snug break-words bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`;
+        loadingMessage.className = `text-md max-w-[90%] self-start break-words rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 leading-snug text-gray-700`;
         loadingMessage.textContent = "Loading conversation history...";
 
         return loadingMessage;
@@ -571,10 +571,10 @@
       createMessageElement(messageContent, messageSender) {
         const messageElement = document.createElement("div");
 
-        messageElement.className = `max-w-[90%] px-3.5 py-3 rounded-md text-md leading-snug break-words ${
+        messageElement.className = `text-md max-w-[90%] break-words rounded-md px-3.5 py-3 leading-snug ${
           messageSender === "model"
-            ? `bg-gray-100 text-gray-700 self-start border border-${CONFIG.THEME_COLOR}-700`
-            : `self-end bg-${CONFIG.THEME_COLOR}-500 text-white border border-${CONFIG.THEME_COLOR}-500 mt-1`
+            ? `self-start border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700`
+            : `mt-1 self-end border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white`
         }`;
 
         if (messageSender !== "model") {
@@ -618,10 +618,10 @@
 
         const productCard = document.createElement("div");
         productCard.className =
-          "border rounded-md p-2 bg-white flex gap-2 text-sm cursor-pointer mt-2";
+          "mt-2 flex cursor-pointer gap-2 rounded-md border bg-white p-2 text-sm";
 
         productCard.innerHTML = `
-          <img src="${product.image_url}" class="h-12 w-12 object-cover rounded-md" />
+          <img src="${product.image_url}" class="h-12 w-12 rounded-md object-cover" />
           <div>
             <div class="font-semibold">${product.title}</div>
             <div class="text-${CONFIG.THEME_COLOR}-500">${price} ${product.price_range.currency}</div>
@@ -650,7 +650,7 @@
 
         suggestions.forEach((suggestion, index) => {
           const suggestionButton = document.createElement("button");
-          suggestionButton.className = `max-w-[90%] text-left px-3.5 py-2.5 rounded-md bg-${CONFIG.THEME_COLOR}-200 hover:bg-${CONFIG.THEME_COLOR}-300 text-sm text-gray-700 transition-colors cursor-pointer`;
+          suggestionButton.className = `max-w-[90%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-200 px-3.5 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-${CONFIG.THEME_COLOR}-300`;
 
           suggestionButton.innerHTML = this.formatMessageContent(suggestion);
 
@@ -683,11 +683,11 @@
         suggestionButtons.forEach((button, index) => {
           if (index === clickedIndex) {
             // Keep clicked suggestion purple/active
-            button.className = `max-w-[90%] text-left p-3 rounded-md bg-${CONFIG.THEME_COLOR}-300 text-white text-sm transition-colors cursor-pointer`;
+            button.className = `max-w-[90%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-300 p-3 text-left text-sm text-white transition-colors`;
           } else {
             // Gray out other suggestions
             button.className =
-              "max-w-[90%] text-left p-3 rounded-md bg-gray-200 text-slate-400 text-sm transition-colors cursor-default";
+              "max-w-[90%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
             button.disabled = true;
           }
         });
@@ -695,7 +695,7 @@
 
       grayOutSuggestionButton(suggestionButton) {
         suggestionButton.className =
-          "max-w-[90%] text-left p-3 rounded-md bg-gray-200 text-slate-400 text-sm transition-colors cursor-default";
+          "max-w-[90%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
         suggestionButton.disabled = true;
       },
 

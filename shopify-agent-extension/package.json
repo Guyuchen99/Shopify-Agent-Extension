@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build:tailwind": "npx tailwindcss -i ./extensions/happy-shopper-extension/assets/tailwind.css -o ./extensions/happy-shopper-extension/assets/tailwind.build.css --watch",
-    "format": "npx prettier --write 'extensions/happy-shopper-extension/blocks/**/*.liquid'",
+    "format": "npx prettier --write 'extensions/happy-shopper-extension/**/*.liquid'",
     "build": "remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
