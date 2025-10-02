@@ -1,5 +1,13 @@
 {{ 'tailwind.build.css' | asset_url | stylesheet_tag }}
 
+<script>
+  window.ShopifyAgentConfig = {
+    THEME_COLOR: '{{ block.settings.agent_theme_color }}',
+  };
+</script>
+
+<script src="{{ 'agent.js' | asset_url }}" defer></script>
+
 <div class="shopify-agent-container fixed bottom-5 right-10 z-50">
   <!-- Floating Agent Bubble -->
   <div class="shopify-agent-bubble flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden bg-transparent transition-transform hover:scale-105">
@@ -145,12 +153,14 @@
 </div>
 
 <script>
-  window.ShopifyAgentConfig = {
-    THEME_COLOR: '{{ block.settings.agent_theme_color }}',
-  };
+  if (sessionStorage.getItem('shopifyAgentChatOpen') === 'true') {
+    const chatWindow = document.querySelector('.shopify-agent-window');
+    if (chatWindow) {
+      chatWindow.classList.remove('opacity-0', 'pointer-events-none');
+      chatWindow.classList.add('opacity-100', 'pointer-events-auto');
+    }
+  }
 </script>
-
-<script src="{{ 'agent.js' | asset_url }}" defer></script>
 
 {% schema %}
 {

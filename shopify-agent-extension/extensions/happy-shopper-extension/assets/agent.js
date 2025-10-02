@@ -94,15 +94,15 @@
       openChatWindow() {
         const { chatWindow, chatInput } = this.elements;
 
-        chatWindow.classList.add(
-          "opacity-100",
-          "pointer-events-auto",
-          "translate-y-0",
-        );
         chatWindow.classList.remove(
           "opacity-0",
           "pointer-events-none",
           "translate-y-2",
+        );
+        chatWindow.classList.add(
+          "opacity-100",
+          "pointer-events-auto",
+          "translate-y-0",
         );
 
         sessionStorage.setItem(CONFIG.STORAGE_KEYS.CHAT_OPEN, "true");
@@ -790,11 +790,11 @@
       this.UI.init(container);
 
       // Restore open state across page loads
-      const wasOpen =
-        sessionStorage.getItem(CONFIG.STORAGE_KEYS.CHAT_OPEN) === "true";
-      if (wasOpen) {
-        this.UI.openChatWindow();
-      }
+      // const wasOpen =
+      //   sessionStorage.getItem(CONFIG.STORAGE_KEYS.CHAT_OPEN) === "true";
+      // if (wasOpen) {
+      //   this.UI.openChatWindow();
+      // }
 
       this.UI.showTypingIndicator();
 
@@ -842,8 +842,5 @@
     },
   };
 
-  // Initialize the application when DOM is ready
-  document.addEventListener("DOMContentLoaded", () => {
-    ShopifyAgent.init();
-  });
+  ShopifyAgent.init();
 })();
