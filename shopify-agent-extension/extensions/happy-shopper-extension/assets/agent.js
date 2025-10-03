@@ -519,6 +519,17 @@
         }
       },
 
+      async fetchFirstProductVariantID() {
+        try {
+          const response = await fetch("/products.json?limit=1");
+          const data = await response.json();
+          return data.products[0].variants[0].id;
+        } catch (error) {
+          console.error("Error in API.fetchFirstProductID: ", error);
+          return null;
+        }
+      },
+
       async fetchCartId() {
         try {
           const response = await fetch("/cart.js");
@@ -526,6 +537,31 @@
           return data.token;
         } catch (error) {
           console.error("Error in API.fetchCartId: ", error);
+          return null;
+        }
+      },
+
+      async updateCartId() {
+        const productVariantId = await this.fetchFirstProductVariantID();
+
+        try {
+          const response = await fetch("/cart/add.js", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: [
+                {
+                  id: productVariantId,
+                  quantity: 0,
+                },
+              ],
+            }),
+          });
+          await response.json();
+
+          return await this.fetchCartId();
+        } catch (error) {
+          console.error("Error in API.updateCartId: ", error);
           return null;
         }
       },
@@ -855,8 +891,12 @@
       if (!cartId) {
         cartId = await this.API.fetchCartId();
 
-        if (cartId) {
-          sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
+        if (!cartId.includes("?key=")) {
+          cartId = await this.API.updateCartId();
+
+          if (cartId) {
+            sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
+          }
         }
       }
 
