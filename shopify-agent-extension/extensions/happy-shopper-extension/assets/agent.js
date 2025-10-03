@@ -887,8 +887,6 @@
         sessionId,
         this.UI.elements.messagesContainer,
       );
-      stuff = this.Util.createTypingIndicator();
-      this.UI.elements.messagesContainer.appendChild(stuff);
     },
   };
 

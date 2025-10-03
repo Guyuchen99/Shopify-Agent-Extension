@@ -9,8 +9,13 @@ export default {
     },
     {
       pattern:
-        /bg-(red|orange|lime|green|teal|cyan|blue|indigo|violet|purple|fuchsia|pink)-(500|600|700)/,
-      variants: ["before", "after"],
+        /bg-(red|orange|lime|green|teal|cyan|blue|indigo|violet|purple|fuchsia|pink)-(500)/,
+      variants: ["before"],
+    },
+    {
+      pattern:
+        /bg-(red|orange|lime|green|teal|cyan|blue|indigo|violet|purple|fuchsia|pink)-(500|700)/,
+      variants: ["after"],
     },
     {
       pattern:

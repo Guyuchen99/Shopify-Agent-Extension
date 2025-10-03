@@ -149,7 +149,7 @@
   position: absolute;
   width: 1.6rem;
   height: 1.6rem;
-  left: 100%;
+  left: calc(100% - 2px);
   top: 0.25rem;
   clip-path: polygon(60% 0%, 0 100%, 0 30%);
   z-index: 10;
@@ -160,10 +160,10 @@
   position: absolute;
   width: 1.6rem;
   height: 1.6rem;
-  left: 100%;
-  top: 0.35rem;
+  left: calc(100% + 0.5px);
+  top: 0.23rem;
   clip-path: polygon(60% 0%, 0 100%, 0 30%);
-  transform: translate(2px, -2px) scale(1.1);
+  transform: translate(0px, -1.5px) scale(1.05);
   z-index: 5;
 }
 
@@ -172,7 +172,7 @@
   position: absolute;
   width: 1.6rem;
   height: 1.6rem;
-  right: 100%;
+  right: calc(100% - 2px);
   top: 0.25rem;
   clip-path: polygon(40% 0, 100% 100%, 100% 30%);
   z-index: 10;
@@ -183,9 +183,9 @@
   position: absolute;
   width: 1.6rem;
   height: 1.6rem;
-  right: 100%;
-  top: 0.35rem;
+  right: calc(100% + 0.5px);
+  top: 0.23rem;
   clip-path: polygon(40% 0, 100% 100%, 100% 30%);
-  transform: translate(-2px, -2px) scale(1.1);
+  transform: translate(0px, -1.5px) scale(1.05);
   z-index: 5;
 }
