@@ -2,6 +2,7 @@
   const CONFIG = {
     API_BASE_URL:
       "https://shopify-agent-extension-412794838331.us-central1.run.app",
+    API_BASE_URL: "https://awesome-adk-server-412794838331.us-central1.run.app",
     STORAGE_KEYS: {
       USER_ID: "shopifyAgentUserId",
       CART_ID: "shopifyAgentCartId",
@@ -20,6 +21,7 @@
     USER_AVATAR:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiLkC3N1FD4ShhqOCHpv03D00GR97kXfwmpw&s",
     SHOPIFY_URL: "https://ycgraphixs-dev.myshopify.com",
+    SHOPIFY_URL: "https://markv3.myshopify.com",
     THEME_COLOR: window.ShopifyAgentConfig?.THEME_COLOR,
   };
 
@@ -722,10 +724,13 @@
 
         const slug = product.title
           .toLowerCase()
+          .replace(/'/g, "") // remove apostrophes
+          .replace(/&/g, "") // remove ampersands
+          .replace(/\+/g, "") // remove plus signs
           .replace(/\s+/g, "-") // replace spaces with dashes
           .replace(/\./g, "-") // replace periods with dashes
-          .replace(/'/g, "") // remove apostrophes
-          .replace(/&/g, ""); // remove ampersands
+          .replace(/^-+|-+$/g, "") // remove leading/trailing dashes
+          .replace(/-{2,}/g, "-"); // collapse multiple dashes into one
 
         productCard.addEventListener("click", () => {
           const url = `${CONFIG.SHOPIFY_URL}/products/${slug}`;
@@ -889,14 +894,14 @@
 
       // Ensure cart ID exists
       if (!cartId) {
-        cartId = await this.API.fetchCartId();
+        let cartId = await this.API.fetchCartId();
 
         if (!cartId.includes("?key=")) {
           cartId = await this.API.updateCartId();
+        }
 
-          if (cartId) {
-            sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
-          }
+        if (cartId) {
+          sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
         }
       }
 
@@ -917,7 +922,6 @@
           sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
         } else {
           this.Util.showWelcomeMessage();
-
           return;
         }
       }
