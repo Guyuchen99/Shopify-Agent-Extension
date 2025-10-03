@@ -547,24 +547,34 @@
       },
 
       createTypingIndicator() {
-        const typingIndicator = document.createElement("div");
-        typingIndicator.dataset.typingIndicator = "true";
+        const typingElement = document.createElement("div");
+        typingElement.dataset.typingIndicator = "true";
+        typingElement.className = "flex flex-col gap-0 items-start";
 
-        typingIndicator.className = `flex items-center gap-0 self-start rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-4 py-3`;
+        const typingAvatar = this.createMessageAvator("model");
 
-        typingIndicator.innerHTML = `
-          <div class="loading-animation relative h-5 w-5">
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
-            <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+        const typingBubble = document.createElement("div");
+        typingBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+        typingBubble.innerHTML = `
+          <div class="flex items-center gap-4 px-2">
+            <div class="loading-animation relative h-5 w-5">
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+              <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
+            </div>
+            <span class="animate-thinking bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-base font-semibold leading-snug text-transparent">
+              Thinking
+            </span>
           </div>
-          <span class="animate-thinking ml-3 bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-base font-semibold leading-snug text-transparent">Thinking</span>
         `;
 
-        return typingIndicator;
+        typingElement.appendChild(typingAvatar);
+        typingElement.appendChild(typingBubble);
+
+        return typingElement;
       },
 
       createMessageElement(messageContent, messageSender) {
@@ -619,8 +629,8 @@
         const messageBubble = document.createElement("div");
         messageBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug ${
           messageSender === "model"
-            ? `agent-chat-bubble ml-10  border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`
-            : `user-chat-bubble mr-10  border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white before:bg-${CONFIG.THEME_COLOR}-500 after:bg-${CONFIG.THEME_COLOR}-500`
+            ? `agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`
+            : `user-chat-bubble mr-10 border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white before:bg-${CONFIG.THEME_COLOR}-500 after:bg-${CONFIG.THEME_COLOR}-500`
         }`;
 
         if (messageSender !== "model") {
@@ -866,6 +876,7 @@
           sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
         } else {
           this.Util.showWelcomeMessage();
+
           return;
         }
       }
@@ -876,6 +887,8 @@
         sessionId,
         this.UI.elements.messagesContainer,
       );
+      stuff = this.Util.createTypingIndicator();
+      this.UI.elements.messagesContainer.appendChild(stuff);
     },
   };
 
