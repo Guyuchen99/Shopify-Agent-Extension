@@ -554,7 +554,8 @@
         const typingAvatar = this.createMessageAvator("model");
 
         const typingBubble = document.createElement("div");
-        typingBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+        typingBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-[10.625px] leading-snug agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+
         typingBubble.innerHTML = `
           <div class="flex items-center gap-4 px-2">
             <div class="loading-animation relative h-5 w-5">
@@ -881,14 +882,22 @@
         }
       }
 
-      this.UI.removeTypingIndicator();
-      await this.API.fetchChatHistory(
-        userId,
-        sessionId,
-        this.UI.elements.messagesContainer,
-      );
+      // this.UI.removeTypingIndicator();
+      // await this.API.fetchChatHistory(
+      //   userId,
+      //   sessionId,
+      //   this.UI.elements.messagesContainer,
+      // );
     },
   };
 
   ShopifyAgent.init();
+  ShopifyAgent.Util.showWelcomeMessage();
+  ShopifyAgent.Message.addMessage(
+    "Hi",
+    "User",
+    ShopifyAgent.UI.elements.messagesContainer,
+  );
+  stuff = ShopifyAgent.Util.createTypingIndicator();
+  ShopifyAgent.UI.elements.messagesContainer.appendChild(stuff);
 })();
