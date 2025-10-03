@@ -882,22 +882,14 @@
         }
       }
 
-      // this.UI.removeTypingIndicator();
-      // await this.API.fetchChatHistory(
-      //   userId,
-      //   sessionId,
-      //   this.UI.elements.messagesContainer,
-      // );
+      this.UI.removeTypingIndicator();
+      await this.API.fetchChatHistory(
+        userId,
+        sessionId,
+        this.UI.elements.messagesContainer,
+      );
     },
   };
 
   ShopifyAgent.init();
-  ShopifyAgent.Util.showWelcomeMessage();
-  ShopifyAgent.Message.addMessage(
-    "Hi",
-    "User",
-    ShopifyAgent.UI.elements.messagesContainer,
-  );
-  stuff = ShopifyAgent.Util.createTypingIndicator();
-  ShopifyAgent.UI.elements.messagesContainer.appendChild(stuff);
 })();
