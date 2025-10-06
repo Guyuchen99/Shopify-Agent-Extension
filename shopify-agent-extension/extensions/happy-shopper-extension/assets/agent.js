@@ -2,7 +2,6 @@
   const CONFIG = {
     API_BASE_URL:
       "https://shopify-agent-extension-412794838331.us-central1.run.app",
-    API_BASE_URL: "https://awesome-adk-server-412794838331.us-central1.run.app",
     STORAGE_KEYS: {
       USER_ID: "shopifyAgentUserId",
       CART_ID: "shopifyAgentCartId",
@@ -21,7 +20,6 @@
     USER_AVATAR:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiLkC3N1FD4ShhqOCHpv03D00GR97kXfwmpw&s",
     SHOPIFY_URL: "https://ycgraphixs-dev.myshopify.com",
-    SHOPIFY_URL: "https://markv3.myshopify.com",
     THEME_COLOR: window.ShopifyAgentConfig?.THEME_COLOR,
   };
 
