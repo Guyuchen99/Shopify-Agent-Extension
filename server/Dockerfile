@@ -1,7 +1,8 @@
-FROM node:latest
+FROM python:3.13
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY pyproject.toml uv.lock ./
+RUN pip install --no-cache-dir uv
+RUN uv sync --frozen
 COPY . .
-EXPOSE 8080
-CMD [ "npm", "run", "start" ]
+EXPOSE 8000
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
