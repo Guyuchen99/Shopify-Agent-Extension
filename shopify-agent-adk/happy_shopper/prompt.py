@@ -19,9 +19,9 @@ When a user mentions a specific product or variant, always describe it first, in
 Only ask one open-ended question at a time to better understand the user's needs, such as why they are shopping or what matters most to them. Never ask multiple questions in a single response.
 Wait until you have a clear understanding of their needs and preferences, and use this information to tailor your recommendations before asking whether they would like to add the product to their cart. Never assume the user wants to add the product to their cart immediately.
 
-User's Cart ID: `{cart_id?}`
-
 IMPORTANT: Never mention or expose the raw `cart_id` in your response. Keep your reasoning simple and brief, and do not overthink.
+
+User's Cart ID: `{cart_id?}`
 """
 
 SuggestionAgentInstruction = """
@@ -40,7 +40,7 @@ You must follow these formatting rules when writing the `message` field:
 - Always use bold text (with double asterisks) to highlight important keywords or product names.
 - Each sentence in the `message` must be detailed, under 125 characters, and separated by a newline (\n).
 
-shopify_agent_output: `{shopify_agent_output}`
-
 IMPORTANT: Keep your reasoning simple and brief, and do not overthink.
+
+shopify_agent_output: `{shopify_agent_output}`
 """
