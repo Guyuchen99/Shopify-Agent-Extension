@@ -1,10 +1,9 @@
 (function () {
   const CONFIG = {
     API_BASE_URL:
-      "https://shopify-agent-extension-412794838331.us-central1.run.app",
+      "https://happy-shopper-extension-412794838331.us-central1.run.app",
     STORAGE_KEYS: {
       USER_ID: "shopifyAgentUserId",
-      CART_ID: "shopifyAgentCartId",
       SESSION_ID: "shopifyAgentSessionId",
       CHAT_OPEN: "shopifyAgentChatOpen",
       LATEST_PRODUCTS: "shopifyAgentLatestProducts",
@@ -254,7 +253,6 @@
         this.grayOutAllSuggestions(messagesContainer);
 
         let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
-        let cartId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.CART_ID);
         let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
 
         // Add user message to chat and clear input
@@ -273,10 +271,9 @@
           }
 
           await ShopifyAgent.API.oneShotResponse(
-            userMessage,
             userId,
-            cartId,
             sessionId,
+            userMessage,
             messagesContainer,
           );
         } catch (error) {
@@ -291,11 +288,18 @@
       },
 
       addMessage(messageContent, messageSender, messagesContainer) {
-        const messageElement = ShopifyAgent.Util.createMessageElement(
-          messageContent,
-          messageSender,
-        );
-        messagesContainer.appendChild(messageElement);
+        const lines = messageContent.split(/\n+/).filter(Boolean);
+
+        for (let i = 0; i < lines.length; i += 2) {
+          const twoLineChunk = lines.slice(i, i + 2).join(" ");
+
+          const messageElement = ShopifyAgent.Util.createMessageElement(
+            twoLineChunk,
+            messageSender,
+          );
+
+          messagesContainer.appendChild(messageElement);
+        }
 
         ShopifyAgent.UI.scrollToBottom();
       },
@@ -360,32 +364,65 @@
     },
 
     API: {
-      async oneShotResponse(
-        userMessage,
-        userId,
-        cartId,
-        sessionId,
-        messagesContainer,
-      ) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/send-message`;
+      async injectAgentMessage(sessionId, agentMessage) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${sessionId}/inject-agent-message?message=${encodeURIComponent(agentMessage)}`;
+
+        try {
+          await fetch(requestUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          ShopifyAgent.Message.addMessage(
+            agentMessage,
+            "model",
+            ShopifyAgent.UI.elements.messagesContainer,
+          );
+        } catch (error) {
+          console.error("Error in API.injectAgentMessage: ", error);
+        }
+      },
+
+      async oneShotResponse(userId, sessionId, userMessage, messagesContainer) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/${sessionId}/send-message?message=${encodeURIComponent(userMessage)}`;
 
         try {
           const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-              sessionId: sessionId,
-              cartId: cartId,
-              message: userMessage,
-            }),
           });
 
-          const data = await response.json();
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
 
-          data.forEach((event) =>
-            this.handleResponseEvent(event, messagesContainer),
-          );
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split("\n\n");
+
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+
+              if (line.startsWith("data:")) {
+                const rawEvent = line.replace(/^data:\s*/, "");
+                const parsedEvent = JSON.parse(rawEvent);
+
+                this.handleResponseEvent(parsedEvent, messagesContainer);
+              }
+            }
+
+            buffer = lines[lines.length - 1];
+          }
+
+          ShopifyAgent.UI.removeTypingIndicator();
         } catch (error) {
           console.error("Error in API.oneShotResponse: ", error);
           throw error;
@@ -432,68 +469,72 @@
         if (part.function_response?.name?.includes("cart")) {
           ShopifyAgent.UI.refreshCartUI();
         }
-
-        ShopifyAgent.UI.removeTypingIndicator();
       },
 
-      async fetchLatestSession(userId) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-latest-session`;
+      async createSession(userId, cartId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/create-session?cart_id=${encodeURIComponent(cartId)}`;
 
         try {
           const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-            }),
           });
 
-          const data = await response.json();
+          const { data } = await response.json();
 
-          return data.output.sessions[0]?.id;
+          return data?.sessionId;
+        } catch (error) {
+          console.error("Error in API.createSession: ", error);
+          return null;
+        }
+      },
+
+      async fetchLatestSession(userId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/latest-session`;
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const { data } = await response.json();
+
+          return data?.latestSessionId;
         } catch (error) {
           console.error("Error in API.fetchLatestSession: ", error);
           return null;
         }
       },
 
-      async fetchChatHistory(userId, sessionId, messagesContainer) {
+      async fetchChatHistory(sessionId, messagesContainer) {
         const loadingMessage = ShopifyAgent.Util.createMessageElement(
           "Loading conversation history...",
           "model",
         );
         messagesContainer.appendChild(loadingMessage);
 
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/get-history`;
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${sessionId}/history`;
 
         try {
           const response = await fetch(requestUrl, {
-            method: "POST",
+            method: "GET",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-              sessionId: sessionId,
-            }),
           });
 
-          const data = await response.json();
+          const { data } = await response.json();
           messagesContainer.removeChild(loadingMessage);
 
           // Render past messages
-          if (data.output.events.length) {
-            data.output.events.forEach((event) => {
+          if (data?.sessionEvents?.length) {
+            data?.sessionEvents.forEach((event) => {
               const role = event.author;
-              const text = event.content?.parts?.[0]?.text;
+              const text = event.content?.parts?.text;
 
               if (!text) return;
 
               if (role === "user") {
-                const userMessage = ShopifyAgent.Util.extractUserMessage(text);
-                ShopifyAgent.Message.addMessage(
-                  userMessage,
-                  role,
-                  messagesContainer,
-                );
+                ShopifyAgent.Message.addMessage(text, role, messagesContainer);
               }
 
               if (role === "suggestion_agent") {
@@ -568,20 +609,6 @@
     },
 
     Util: {
-      extractUserMessage(userMessage) {
-        const parts = userMessage.split("user_message=");
-        return parts.length > 1 ? parts[1].trim() : userMessage;
-      },
-
-      showWelcomeMessage() {
-        ShopifyAgent.UI.removeTypingIndicator();
-        ShopifyAgent.Message.addMessage(
-          CONFIG.WELCOME_MESSAGE,
-          "model",
-          ShopifyAgent.UI.elements.messagesContainer,
-        );
-      },
-
       createTypingIndicator() {
         const typingElement = document.createElement("div");
         typingElement.dataset.typingIndicator = "true";
@@ -673,25 +700,21 @@
         if (messageSender !== "model") {
           messageBubble.innerHTML = this.formatMessageContent(messageContent);
         } else {
-          const lines = messageContent.split(/\n+/).filter(Boolean);
+          const lineDiv = document.createElement("div");
+          lineDiv.innerHTML = this.formatMessageContent(messageContent);
 
-          lines.forEach((line) => {
-            const lineDiv = document.createElement("div");
-            lineDiv.innerHTML = this.formatMessageContent(line);
+          messageBubble.appendChild(lineDiv);
 
-            messageBubble.appendChild(lineDiv);
+          const products = ShopifyAgent.Util.getLatestProducts();
 
-            const products = ShopifyAgent.Util.getLatestProducts();
+          const product = products.find((product) =>
+            messageContent.includes(product.title),
+          );
 
-            const product = products.find((product) =>
-              line.includes(product.title),
-            );
-
-            if (product) {
-              const productCard = ShopifyAgent.Util.createProductCard(product);
-              messageBubble.appendChild(productCard);
-            }
-          });
+          if (product) {
+            const productCard = ShopifyAgent.Util.createProductCard(product);
+            messageBubble.appendChild(productCard);
+          }
         }
 
         return messageBubble;
@@ -811,42 +834,6 @@
           '<strong class="font-semibold">$1</strong>',
         );
 
-        // 3. Format unordered lists: lines starting with "- " or "* "
-        formatted = formatted.replace(
-          /^[\s]*[-*]\s+(.+)$/gm,
-          '<li class="ml-4 list-disc list-inside">$1</li>',
-        );
-
-        // 4. Format ordered lists: lines starting with "1. ", "2. ", etc.
-        formatted = formatted.replace(
-          /^[\s]*\d+\.\s+(.+)$/gm,
-          '<li class="ml-4 list-decimal list-inside">$1</li>',
-        );
-
-        // 5. Wrap consecutive list items in proper list containers
-        // Handle unordered lists
-        formatted = formatted.replace(
-          /(<li class="ml-4 list-disc[^"]*">[^<]*<\/li>[\s\n]*)+/g,
-          (match) => {
-            return '<ul class="my-2 space-y-1">' + match + "</ul>";
-          },
-        );
-
-        // Handle ordered lists
-        formatted = formatted.replace(
-          /(<li class="ml-4 list-decimal[^"]*">[^<]*<\/li>[\s\n]*)+/g,
-          (match) => {
-            return '<ol class="my-2 space-y-1">' + match + "</ol>";
-          },
-        );
-
-        // 6. Convert line breaks to <br> tags for proper spacing
-        formatted = formatted.replace(/\n/g, "<br>");
-
-        // 7. Clean up extra spacing around lists
-        formatted = formatted.replace(/<br>(<[uo]l)/g, "$1");
-        formatted = formatted.replace(/(<\/[uo]l>)<br>/g, "$1");
-
         return formatted;
       },
 
@@ -887,29 +874,17 @@
 
       // Check for existing conversation
       let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
-      let cartId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.CART_ID);
       let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
+      let cartId = await this.API.fetchCartId();
 
-      // Ensure cart ID exists
-      if (!cartId) {
-        let cartId = await this.API.fetchCartId();
-
-        if (!cartId.includes("?key=")) {
-          cartId = await this.API.updateCartId();
-        }
-
-        if (cartId) {
-          sessionStorage.setItem(CONFIG.STORAGE_KEYS.CART_ID, cartId);
-        }
+      if (!cartId.includes("?key=")) {
+        cartId = await this.API.updateCartId();
       }
 
       // Handle new user
       if (!userId) {
         userId = "user-" + crypto.randomUUID();
         localStorage.setItem(CONFIG.STORAGE_KEYS.USER_ID, userId);
-
-        this.Util.showWelcomeMessage();
-        return;
       }
 
       // Handle new sessions
@@ -919,14 +894,17 @@
         if (sessionId) {
           sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
         } else {
-          this.Util.showWelcomeMessage();
+          sessionId = await this.API.createSession(userId, cartId);
+          sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
+
+          this.UI.removeTypingIndicator();
+          this.API.injectAgentMessage(sessionId, CONFIG.WELCOME_MESSAGE);
           return;
         }
       }
 
       this.UI.removeTypingIndicator();
       await this.API.fetchChatHistory(
-        userId,
         sessionId,
         this.UI.elements.messagesContainer,
       );
