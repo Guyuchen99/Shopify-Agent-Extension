@@ -263,13 +263,6 @@
         ShopifyAgent.UI.showTypingIndicator();
 
         try {
-          if (!sessionId && userId) {
-            sessionId = await ShopifyAgent.API.fetchLatestSession(userId);
-            if (sessionId) {
-              sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
-            }
-          }
-
           await ShopifyAgent.API.oneShotResponse(
             userId,
             sessionId,
