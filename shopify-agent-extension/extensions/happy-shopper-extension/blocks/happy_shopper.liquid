@@ -8,7 +8,7 @@
 
 <script src="{{ 'agent.js' | asset_url }}" defer></script>
 
-<div class="shopify-agent-container fixed bottom-5 right-10 z-50">
+<div class="shopify-agent-container fixed bottom-4 right-10 z-50">
   <!-- Floating Agent Bubble -->
   <div class="shopify-agent-bubble flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden bg-transparent transition-transform hover:scale-105">
     <img
@@ -16,7 +16,8 @@
       alt="Shopify Agent Icon"
       class="animate-glowing h-3/4 w-3/4 rounded-full border border-gray-200 object-cover"
       width="112px"
-      height="112px">
+      height="112px"
+    >
   </div>
 
   <!-- Chat Window -->
@@ -29,7 +30,8 @@
           alt="Shopify Agent"
           class="h-8 w-8"
           width="32px"
-          height="32px">
+          height="32px"
+        >
         <span class="text-lg font-semibold text-white">Shopify Agent</span>
       </div>
 
@@ -37,7 +39,8 @@
         <button
           type="button"
           class="shopify-agent-options m-0 flex h-8 w-8 cursor-pointer items-center justify-center text-white"
-          aria-label="More Options">
+          aria-label="More Options"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="22"
@@ -48,7 +51,8 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-ellipsis-icon lucide-ellipsis hover:scale-110">
+            class="lucide lucide-ellipsis-icon lucide-ellipsis hover:scale-110"
+          >
             <circle
               cx="12"
               cy="12"
@@ -66,7 +70,8 @@
         <button
           type="button"
           class="shopify-agent-close m-0 flex h-8 w-8 cursor-pointer items-center justify-center text-white"
-          aria-label="Close Chat">
+          aria-label="Close Chat"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="22"
@@ -77,7 +82,8 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-x-icon lucide-x hover:scale-110">
+            class="lucide lucide-x-icon lucide-x hover:scale-110"
+          >
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />
           </svg>
@@ -91,16 +97,18 @@
     <!-- Input -->
     <div class="shopify-agent-input flex items-center border-t border-{{ block.settings.agent_theme_color }}-600 px-4 py-3">
       <div class="relative flex-1">
-          <!-- Input -->
+        <!-- Input -->
         <input
           type="text"
           placeholder="Ask me anything..."
-          class="peer w-full rounded-2xl border-2 border-{{ block.settings.agent_theme_color }}-400 bg-{{ block.settings.agent_theme_color }}-100 py-3 pl-10 pr-20 text-sm text-gray-800 outline-none focus:border-{{ block.settings.agent_theme_color }}-600">
+          class="peer w-full rounded-2xl border-2 border-{{ block.settings.agent_theme_color }}-400 bg-{{ block.settings.agent_theme_color }}-100 py-3 pl-10 pr-20 text-sm text-gray-800 outline-none focus:border-{{ block.settings.agent_theme_color }}-600"
+        >
 
         <button
           type="button"
           class="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center text-{{ block.settings.agent_theme_color }}-400 hover:text-{{ block.settings.agent_theme_color }}-600 peer-focus:text-{{ block.settings.agent_theme_color }}-600"
-          aria-label="Add">
+          aria-label="Add"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -111,7 +119,8 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-plus-icon lucide-plus hover:scale-110">
+            class="lucide lucide-plus-icon lucide-plus hover:scale-110"
+          >
             <path d="M5 12h14" />
             <path d="M12 5v14" />
           </svg>
@@ -120,7 +129,8 @@
         <button
           type="button"
           class="shopify-agent-send absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center text-{{ block.settings.agent_theme_color }}-400 hover:text-{{ block.settings.agent_theme_color }}-600 peer-focus:text-{{ block.settings.agent_theme_color }}-600"
-          aria-label="Send message">
+          aria-label="Send message"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -131,7 +141,8 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-send-icon lucide-send hover:scale-110">
+            class="lucide lucide-send-icon lucide-send hover:scale-110"
+          >
             <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
             <path d="m21.854 2.147-10.94 10.939" />
           </svg>
@@ -152,61 +163,69 @@
 </script>
 
 {% schema %}
-  {
-    "name": "AI Agent",
-    "target": "body",
-    "settings": [
-      {
-        "type": "select",
-        "id": "agent_theme_color",
-        "label": "Agent Theme Color",
-        "default": "violet",
-        "options": [
-          {
-            "value": "red",
-            "label": "red"
-          },
-          {
-            "value": "orange",
-            "label": "orange"
-          },
-          {
-            "value": "lime",
-            "label": "lime"
-          },
-          {
-            "value": "green",
-            "label": "green"
-          }, {
-            "value": "teal",
-            "label": "teal"
-          }, {
-            "value": "cyan",
-            "label": "cyan"
-          }, {
-            "value": "blue",
-            "label": "blue"
-          }, {
-            "value": "indigo",
-            "label": "indigo"
-          }, {
-            "value": "violet",
-            "label": "violet"
-          }, {
-            "value": "purple",
-            "label": "purple"
-          }, {
-            "value": "fuchsia",
-            "label": "fuchsia"
-          }, {
-            "value": "pink",
-            "label": "pink"
-          }
-        ]
-      }
-    ],
-    "enabled_on": {
-      "templates": ["*"]
+{
+  "name": "AI Agent",
+  "target": "body",
+  "settings": [
+    {
+      "type": "select",
+      "id": "agent_theme_color",
+      "label": "Agent Theme Color",
+      "default": "violet",
+      "options": [
+        {
+          "value": "red",
+          "label": "red"
+        },
+        {
+          "value": "orange",
+          "label": "orange"
+        },
+        {
+          "value": "lime",
+          "label": "lime"
+        },
+        {
+          "value": "green",
+          "label": "green"
+        },
+        {
+          "value": "teal",
+          "label": "teal"
+        },
+        {
+          "value": "cyan",
+          "label": "cyan"
+        },
+        {
+          "value": "blue",
+          "label": "blue"
+        },
+        {
+          "value": "indigo",
+          "label": "indigo"
+        },
+        {
+          "value": "violet",
+          "label": "violet"
+        },
+        {
+          "value": "purple",
+          "label": "purple"
+        },
+        {
+          "value": "fuchsia",
+          "label": "fuchsia"
+        },
+        {
+          "value": "pink",
+          "label": "pink"
+        }
+      ]
     }
+  ],
+  "enabled_on": {
+    "templates": ["*"]
   }
+}
 {% endschema %}

@@ -648,6 +648,10 @@ video {
   bottom: 4rem;
 }
 
+.bottom-4 {
+  bottom: 1rem;
+}
+
 .bottom-5 {
   bottom: 1.25rem;
 }
@@ -824,10 +828,6 @@ video {
 
 .h-full {
   height: 100%;
-}
-
-.h-\[21\.25px\] {
-  height: 21.25px;
 }
 
 .max-h-\[550px\] {
@@ -24140,36 +24140,6 @@ video {
   padding-bottom: 1.25rem;
 }
 
-.py-\[8px\] {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.py-\[9px\] {
-  padding-top: 9px;
-  padding-bottom: 9px;
-}
-
-.py-\[12px\] {
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
-
-.py-\[11px\] {
-  padding-top: 11px;
-  padding-bottom: 11px;
-}
-
-.py-\[10px\] {
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.py-\[10\.75px\] {
-  padding-top: 10.75px;
-  padding-bottom: 10.75px;
-}
-
 .py-\[10\.625px\] {
   padding-top: 10.625px;
   padding-bottom: 10.625px;
@@ -24219,12 +24189,12 @@ video {
   line-height: 1.75rem;
 }
 
-.font-semibold {
-  font-weight: 600;
-}
-
 .font-normal {
   font-weight: 400;
+}
+
+.font-semibold {
+  font-weight: 600;
 }
 
 .ordinal {
@@ -24234,10 +24204,6 @@ video {
 
 .leading-snug {
   line-height: 1.375;
-}
-
-.leading-\[1\.05rem\] {
-  line-height: 1.05rem;
 }
 
 .text-blue-100 {
