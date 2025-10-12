@@ -1,4 +1,6 @@
+import os
 import json
+import requests
 from google.adk.agents import Agent, SequentialAgent
 from google.adk.tools import google_search
 from google.adk.tools.base_tool import BaseTool
@@ -8,6 +10,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
 from pydantic import BaseModel, Field
 from typing import List, Any, Dict, Optional
+from dotenv import load_dotenv
 
 
 from happy_shopper.prompt import (
@@ -15,6 +18,11 @@ from happy_shopper.prompt import (
     ShopifyAgentInstruction,
     SuggestionAgentInstruction,
 )
+
+load_dotenv()
+
+SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN")
+SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN")
 
 
 class SuggestionAgentOutput(BaseModel):
@@ -37,11 +45,87 @@ def after_tool_callback(
         parsed_response = json.loads(search_shop_catalog_response)
 
         new_products = parsed_response.get("products", [])
+
+        for product in new_products:
+            product_id = product.get("product_id")
+
+            # Simplify existing variants if present
+            variants = product.get("variants")
+            if variants:
+                simplified_variants = []
+
+                for v in variants:
+                    simplified_variant = {
+                        "variant_id": v.get("variant_id"),
+                        "title": v.get("title"),
+                        "price": v.get("price"),
+                        "available": v.get("available"),
+                    }
+                    simplified_variants.append(simplified_variant)
+                product["variants"] = simplified_variants
+
+            # Turn availabilityMatrix into variants if present
+            availabilityMatrix = product.get("availabilityMatrix")
+            if availabilityMatrix:
+                request_url = f"{SHOPIFY_DOMAIN}/admin/api/2024-10/graphql.json"
+
+                query = f"""
+                {{
+                    product(id: "{product_id}") {{
+                        variants(first: 100) {{
+                            edges {{
+                                node {{
+                                    id
+                                    title
+                                    price
+                                    availableForSale
+                                }}
+                            }}
+                        }}
+                    }}
+                }}
+                """
+
+                response = requests.post(
+                    request_url,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Shopify-Access-Token": SHOPIFY_ADMIN_TOKEN,
+                    },
+                    json={"query": query},
+                )
+
+                data = response.json()
+
+                edges = (
+                    data.get("data", {})
+                    .get("product", {})
+                    .get("variants", {})
+                    .get("edges", [])
+                )
+
+                updated_variants = []
+                for e in edges:
+                    variant = e.get("node")
+                    if variant:
+                        updated_variants.append(
+                            {
+                                "variant_id": variant.get("id"),
+                                "title": variant.get("title"),
+                                "price": variant.get("price"),
+                                "available": variant.get("availableForSale"),
+                            }
+                        )
+
+                product["variants"] = updated_variants
+                product.pop("availabilityMatrix")
+
+        # Cache updated products without duplicates
         cached_products = tool_context.state.get("cached_products", [])
 
-        combined_products = cached_products + new_products
+        combined_products = {p["product_id"]: p for p in cached_products + new_products}
 
-        tool_context.state["cached_products"] = combined_products
+        tool_context.state["cached_products"] = list(combined_products.values())
 
 
 def get_cached_products(product_name: str, tool_context: ToolContext) -> dict:
@@ -95,7 +179,7 @@ shopify_agent = Agent(
         AgentTool(agent=search_agent),
         McpToolset(
             connection_params=StreamableHTTPConnectionParams(
-                url="https://ycgraphixs-dev.myshopify.com/api/mcp",
+                url=f"{SHOPIFY_DOMAIN}/api/mcp",
             ),
             tool_filter=["search_shop_catalog", "get_cart", "update_cart"],
             errlog=None,
