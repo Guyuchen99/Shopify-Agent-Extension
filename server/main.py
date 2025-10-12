@@ -87,7 +87,7 @@ async def inject_agent_message(session_id: str, message: str):
 
         client.agent_engines.sessions.events.append(
             name=f"{AGENT_ENGINE_BASE_URL}/sessions/{session_id}",
-            author="shopify_agent",
+            author="suggestion_agent",
             invocation_id=invocation_id,
             timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
             config={
