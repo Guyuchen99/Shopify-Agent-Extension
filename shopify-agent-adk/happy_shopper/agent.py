@@ -102,14 +102,14 @@ shopify_agent = Agent(
         ),
         get_cached_products,
     ],
-    output_key="shopify_agent_output",
+    output_key="agent_output",
     after_tool_callback=after_tool_callback,
 )
 
 suggestion_agent = Agent(
     name="suggestion_agent",
     model="gemini-2.5-flash",
-    description="Formats shopify agent output into concise user-friendly output with prompt suggestions",
+    description="Formats agent output into concise output with prompt suggestions",
     instruction=SuggestionAgentInstruction,
     output_schema=SuggestionAgentOutput,
     include_contents="none",
