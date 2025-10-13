@@ -24,6 +24,11 @@ load_dotenv()
 SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN")
 SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN")
 
+if not all([SHOPIFY_DOMAIN, SHOPIFY_ADMIN_TOKEN]):
+    raise RuntimeError(
+        "Missing environment variables: SHOPIFY_DOMAIN or SHOPIFY_ADMIN_TOKEN"
+    )
+
 
 class SuggestionAgentOutput(BaseModel):
     message: str = Field(description="Your response to the user")
