@@ -622,7 +622,7 @@
               <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
               <div class="loading-animation-dot absolute inset-0 h-full w-full before:bg-${CONFIG.THEME_COLOR}-500"></div>
             </div>
-            <span class="animate-thinking bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-md font-semibold leading-snug text-transparent">
+            <span class="animate-thinking bg-gradient-to-r from-${CONFIG.THEME_COLOR}-200 via-${CONFIG.THEME_COLOR}-600 to-slate-50 bg-[length:200%_100%] bg-clip-text text-base font-semibold leading-snug text-transparent">
               Thinking Deeply
             </span>
           </div>
@@ -684,7 +684,7 @@
 
       createMessageBubble(messageContent, messageSender) {
         const messageBubble = document.createElement("div");
-        messageBubble.className = `relative text-md max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug ${
+        messageBubble.className = `relative text-sm max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug ${
           messageSender === "model"
             ? `agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`
             : `user-chat-bubble mr-10 border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white before:bg-${CONFIG.THEME_COLOR}-500 after:bg-${CONFIG.THEME_COLOR}-500`
