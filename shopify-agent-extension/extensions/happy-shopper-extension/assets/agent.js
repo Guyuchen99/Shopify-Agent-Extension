@@ -214,6 +214,11 @@
 
         sendButton.disabled = true;
         sendButton.classList.add("opacity-50", "cursor-not-allowed");
+
+        document.querySelectorAll(".agent-product-card").forEach((card) => {
+          card.style.cursor = "not-allowed";
+          card.classList.add("opacity-50");
+        });
       },
 
       enableInput() {
@@ -225,6 +230,11 @@
 
         sendButton.disabled = false;
         sendButton.classList.remove("opacity-50", "cursor-not-allowed");
+
+        document.querySelectorAll(".agent-product-card").forEach((card) => {
+          card.style.cursor = "pointer";
+          card.classList.remove("opacity-50");
+        });
       },
 
       async refreshCartUI() {
@@ -726,7 +736,7 @@
 
         const productCard = document.createElement("div");
         productCard.className =
-          "mt-2 flex cursor-pointer gap-2 rounded-md border bg-white p-2 text-sm";
+          "agent-product-card mt-2 flex cursor-pointer gap-2 rounded-md border bg-white p-2 text-sm";
 
         productCard.innerHTML = `
           <img src="${product.image_url}" class="h-12 w-12 rounded-md object-cover" />
@@ -747,6 +757,12 @@
           .replace(/-{2,}/g, "-"); // collapse multiple dashes into one
 
         productCard.addEventListener("click", () => {
+          const chatInput = ShopifyAgent.UI.elements.chatInput;
+
+          if (chatInput.disabled) {
+            return;
+          }
+
           const url = `${CONFIG.SHOPIFY_URL}/products/${slug}`;
           window.location.href = url;
         });
