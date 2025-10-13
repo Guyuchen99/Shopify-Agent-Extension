@@ -60,6 +60,7 @@ def create() -> None:
             "cloudpickle",
             "pydantic",
         ],
+        env_vars=["SHOPIFY_ADMIN_TOKEN", "SHOPIFY_DOMAIN"],
         extra_packages=["./happy_shopper"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
