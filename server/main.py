@@ -74,9 +74,12 @@ async def create_session(user_id: str, cart_id: str):
             config=config,
         )
 
+        print(
+            f"✅ NOTE: /api/chat/{user_id}/create-session returned: {{'sessionId': '{session_id}'}}"
+        )
         return AgentResponse(success=True, data={"sessionId": session_id})
     except Exception as e:
-        print(f"Something went wrong with /api/chat/{user_id}/create-session: {e}")
+        print(f"❌ ERROR: /api/chat/{user_id}/create-session failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -95,11 +98,12 @@ async def inject_agent_message(session_id: str, message: str):
             },
         )
 
+        print(
+            f"✅ NOTE: /api/chat/{session_id}/inject-agent-message returned: {{'injectedAgentMessage': '{message}'}}"
+        )
         return AgentResponse(success=True, data={"injectedAgentMessage": message})
     except Exception as e:
-        print(
-            f"Something went wrong with /api/chat/{session_id}/inject-agent-message: {e}"
-        )
+        print(f"❌ ERROR: /api/chat/{session_id}/inject-agent-message failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -109,16 +113,24 @@ async def send_message(user_id: str, session_id: str, message: str):
         adk_application = client.agent_engines.get(name=AGENT_ENGINE_BASE_URL)
 
         async def event_stream():
+            print(
+                f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-message streaming started."
+            )
+
             async for event in adk_application.async_stream_query(
                 user_id=user_id,
                 session_id=session_id,
                 message=message,
             ):
+                print(f"🟢 EVENT: {json.dumps(event, indent=2)}")
                 yield f"data: {json.dumps(event)}\n\n"
 
+        print(
+            f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-message streaming ended."
+        )
         return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
-        print(f"Something went wrong with /api/chat/{user_id}/send-message: {e}")
+        print(f"❌ ERROR: /api/chat/{user_id}/{session_id}/send-message failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -134,9 +146,12 @@ async def get_latest_session(user_id: str):
             latest_session_id = session.name.split("/sessions/")[-1]
             break
 
+        print(
+            f"✅ NOTE: /api/chat/{user_id}/latest-session returned: {{'latestSessionId': '{latest_session_id}'}}"
+        )
         return AgentResponse(success=True, data={"latestSessionId": latest_session_id})
     except Exception as e:
-        print(f"Something went wrong with /api/chat/{user_id}/latest-session: {e}")
+        print(f"❌ ERROR: /api/chat/{user_id}/latest-session failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -168,7 +183,11 @@ async def get_history(session_id: str):
                 "timestamp": session_event.timestamp.isoformat(),
             }
             session_history.append(event)
+
+        print(
+            f"✅ NOTE: /api/chat/{session_id}/history returned: {{'sessionEvents': '{session_history}'}}"
+        )
         return AgentResponse(success=True, data={"sessionEvents": session_history})
     except Exception as e:
-        print(f"Something went wrong with /api/chat/{session_id}/history: {e}")
+        print(f"❌ ERROR: /api/chat/{session_id}/history failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
