@@ -456,9 +456,17 @@
             if (products.length) {
               const currentProducts = ShopifyAgent.Util.getLatestProducts();
 
-              const updatedProducts = [...currentProducts, ...products];
+              const combinedProducts = [...currentProducts, ...products];
 
-              ShopifyAgent.Util.setLatestProducts(updatedProducts);
+              const productsMap = new Map();
+
+              for (const product of combinedProducts) {
+                productsMap.set(product.product_id, product);
+              }
+
+              const uniqueProducts = Array.from(productsMap.values());
+
+              ShopifyAgent.Util.setLatestProducts(uniqueProducts);
             }
           } catch (error) {
             console.error(
@@ -710,13 +718,15 @@
 
           const products = ShopifyAgent.Util.getLatestProducts();
 
-          const product = products.find((product) =>
-            messageContent.includes(product.title),
+          const matchedProducts = products.filter((product) =>
+            messageContent.toLowerCase().includes(product.title.toLowerCase()),
           );
 
-          if (product) {
-            const productCard = ShopifyAgent.Util.createProductCard(product);
-            messageBubble.appendChild(productCard);
+          if (matchedProducts.length > 0) {
+            matchedProducts.forEach((product) => {
+              const productCard = ShopifyAgent.Util.createProductCard(product);
+              messageBubble.appendChild(productCard);
+            });
           }
         }
 
