@@ -353,12 +353,12 @@
 
       parseMessageContent(messageContent, messagesContainer) {
         try {
-          const parsedContent = JSON.parse(messageContent);
+          if (messageContent.message) {
+            this.addMessage(messageContent.message, "model", messagesContainer);
+          }
 
-          if (parsedContent.message && parsedContent.suggestion) {
-            this.addMessage(parsedContent.message, "model", messagesContainer);
-
-            this.addSuggestions(parsedContent.suggestion, messagesContainer);
+          if (messageContent.suggestions.length > 0) {
+            this.addSuggestions(messageContent.suggestions, messagesContainer);
           }
         } catch (error) {
           this.addMessage(messageContent, "model", messagesContainer);
@@ -433,53 +433,50 @@
       },
 
       handleResponseEvent(event, messagesContainer) {
-        const part = event.content?.parts?.[0];
-
-        if (event.author === "suggestion_agent") {
-          // Render model message
-          if (part.text) {
+        event.content?.parts?.forEach((part) => {
+          if (part.function_call?.name === "set_model_response") {
             ShopifyAgent.Message.parseMessageContent(
-              part.text,
+              part.function_call?.args,
               messagesContainer,
             );
           }
-        }
 
-        if (part.function_response?.name === "search_shop_catalog") {
-          try {
-            const productContent =
-              part.function_response.response.result.content[0].text;
-            const parsedContent = JSON.parse(productContent);
+          if (part.function_response?.name === "search_shop_catalog") {
+            try {
+              const productContent =
+                part.function_response.response.content[0].text;
+              const parsedContent = JSON.parse(productContent);
 
-            const products = parsedContent.products;
+              const products = parsedContent.products;
 
-            if (products.length) {
-              const currentProducts = ShopifyAgent.Util.getLatestProducts();
+              if (products.length) {
+                const currentProducts = ShopifyAgent.Util.getLatestProducts();
 
-              const combinedProducts = [...currentProducts, ...products];
+                const combinedProducts = [...currentProducts, ...products];
 
-              const productsMap = new Map();
+                const productsMap = new Map();
 
-              for (const product of combinedProducts) {
-                productsMap.set(product.product_id, product);
+                for (const product of combinedProducts) {
+                  productsMap.set(product.product_id, product);
+                }
+
+                const uniqueProducts = Array.from(productsMap.values());
+
+                ShopifyAgent.Util.setLatestProducts(uniqueProducts);
               }
-
-              const uniqueProducts = Array.from(productsMap.values());
-
-              ShopifyAgent.Util.setLatestProducts(uniqueProducts);
+            } catch (error) {
+              console.error(
+                "Failed to parse search_shop_catalog payload: ",
+                error,
+              );
             }
-          } catch (error) {
-            console.error(
-              "Failed to parse search_shop_catalog payload: ",
-              error,
-            );
           }
-        }
 
-        // Refresh cart if cart tool triggered
-        if (part.function_response?.name?.includes("cart")) {
-          ShopifyAgent.UI.refreshCartUI();
-        }
+          // Refresh cart if cart tool triggered
+          if (part.function_response?.name?.includes("cart")) {
+            ShopifyAgent.UI.refreshCartUI();
+          }
+        });
       },
 
       async createSession(userId, cartId) {
@@ -539,7 +536,7 @@
           // Render past messages
           if (data?.sessionEvents?.length) {
             data?.sessionEvents.forEach((event) => {
-              const role = event.author;
+              const role = event.content?.role;
               const text = event.content?.parts?.text;
 
               if (!text) return;
@@ -548,9 +545,9 @@
                 ShopifyAgent.Message.addMessage(text, role, messagesContainer);
               }
 
-              if (role === "suggestion_agent") {
+              if (role === "model") {
                 ShopifyAgent.Message.parseMessageContent(
-                  text,
+                  JSON.parse(text),
                   messagesContainer,
                 );
               }
