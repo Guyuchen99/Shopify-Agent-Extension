@@ -88,13 +88,15 @@ async def inject_agent_message(session_id: str, message: str):
     try:
         invocation_id = f"e-{uuid.uuid4()}"
 
+        model_message = json.dumps({"message": message, "suggestions": []})
+
         client.agent_engines.sessions.events.append(
             name=f"{AGENT_ENGINE_BASE_URL}/sessions/{session_id}",
-            author="suggestion_agent",
+            author="shopify_agent",
             invocation_id=invocation_id,
             timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
             config={
-                "content": {"role": "model", "parts": [{"text": message}]},
+                "content": {"role": "model", "parts": [{"text": model_message}]},
             },
         )
 
