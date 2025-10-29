@@ -24162,11 +24162,6 @@ video {
   padding-bottom: 10.625px;
 }
 
-.py-\[11\.625px\] {
-  padding-top: 11.625px;
-  padding-bottom: 11.625px;
-}
-
 .pl-10 {
   padding-left: 2.5rem;
 }
@@ -24209,14 +24204,6 @@ video {
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
-}
-
-.text-\[14px\] {
-  font-size: 14px;
-}
-
-.text-\[16px\] {
-  font-size: 16px;
 }
 
 .font-normal {
@@ -32817,14 +32804,6 @@ video {
 .text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-.text-\[14\[x\]\] {
-  color: 14[x];
-}
-
-.text-\[\] {
-  color: ;
 }
 
 .underline {
