@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from google.adk.agents import Agent, SequentialAgent
+from google.adk.agents import Agent
 from google.adk.tools import google_search
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.agent_tool import AgentTool
@@ -12,11 +12,9 @@ from pydantic import BaseModel, Field
 from typing import List, Any, Dict, Optional
 from dotenv import load_dotenv
 
-
 from happy_shopper.prompt import (
     SearchAgentInstruction,
     ShopifyAgentInstruction,
-    SuggestionAgentInstruction,
 )
 
 load_dotenv()
@@ -24,16 +22,12 @@ load_dotenv()
 SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN")
 SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN")
 
-if not all([SHOPIFY_DOMAIN, SHOPIFY_ADMIN_TOKEN]):
-    raise RuntimeError(
-        "Missing environment variables: SHOPIFY_DOMAIN or SHOPIFY_ADMIN_TOKEN"
-    )
 
-
-class SuggestionAgentOutput(BaseModel):
+class AgentOutput(BaseModel):
     message: str = Field(description="Your response to the user")
-    suggestion: List[str] = Field(
-        description="User's possible follow-up reply based on your response"
+    suggestions: List[str] = Field(
+        description="User's possible follow-up reply based on your response",
+        min_length=2,
     )
 
 
@@ -43,10 +37,10 @@ def after_tool_callback(
     """
     Intercepts tool responses after execution.
 
-    If the MCP 'search_shop_catalog' tool is called, cache its response in the session state under 'cached_shop_catalog_response'.
+    If the 'search_shop_catalog' MCP tool is called, cache its response in the session state under 'cached_products'.
     """
     if tool.name == "search_shop_catalog":
-        search_shop_catalog_response = tool_response.content[0].text
+        search_shop_catalog_response = tool_response["content"][0]["text"]
         parsed_response = json.loads(search_shop_catalog_response)
 
         new_products = parsed_response.get("products", [])
@@ -132,12 +126,14 @@ def after_tool_callback(
 
         tool_context.state["cached_products"] = list(combined_products.values())
 
+        return None
+
 
 def get_cached_products(product_name: str, tool_context: ToolContext) -> dict:
     """
     Retrieve products from the cached product list that match a given product name.
 
-    This function checks whether relevant products have already been fetched from the Shopify catalog in the current session before making a new `search_shop_catalog` tool call.
+    This tool checks whether relevant products have already been fetched from the Shopify catalog in the current session before making a new `search_shop_catalog` tool call.
 
     Args:
         product_name (str): The product name or keyword to search for
@@ -167,6 +163,22 @@ def get_cached_products(product_name: str, tool_context: ToolContext) -> dict:
     }
 
 
+def set_gender_preference(gender: str, tool_context: ToolContext) -> dict:
+    """
+    Sets the user's shopping gender preference in the session state, indicating which gender category the user intends to shop for.
+
+    Args:
+        gender (str): The gender category selected by the user ("men", "women", or "unisex").
+    """
+    state = tool_context.state
+    state["gender"] = gender
+
+    return {
+        "status": "success",
+        "gender": gender,
+    }
+
+
 search_agent = Agent(
     name="search_agent",
     model="gemini-2.5-flash",
@@ -175,9 +187,10 @@ search_agent = Agent(
     tools=[google_search],
 )
 
-shopify_agent = Agent(
+
+root_agent = Agent(
     name="shopify_agent",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-pro",
     description="A personalized shopping agent for YC Graphixs's store",
     instruction=ShopifyAgentInstruction,
     tools=[
@@ -190,22 +203,8 @@ shopify_agent = Agent(
             errlog=None,
         ),
         get_cached_products,
+        set_gender_preference,
     ],
-    output_key="agent_output",
+    output_schema=AgentOutput,
     after_tool_callback=after_tool_callback,
-)
-
-suggestion_agent = Agent(
-    name="suggestion_agent",
-    model="gemini-2.5-flash",
-    description="Formats agent output into concise output with prompt suggestions",
-    instruction=SuggestionAgentInstruction,
-    output_schema=SuggestionAgentOutput,
-    include_contents="none",
-)
-
-root_agent = SequentialAgent(
-    name="root_agent",
-    description="Orchestrates the shopify and suggestion agents for YC Graphixs's store",
-    sub_agents=[shopify_agent, suggestion_agent],
 )
