@@ -91,7 +91,7 @@
         });
 
         // Keep messages pinned to bottom on resize
-        window.addEventListener("resize", () => this.scrollToBottom());
+        window.addEventListener("resize", () => this.scrollToLastUserMessage());
       },
 
       openChatWindow() {
@@ -122,7 +122,7 @@
         } else {
           chatInput.focus();
         }
-        this.scrollToBottom();
+        this.scrollToLastUserMessage();
       },
 
       closeChatWindow() {
@@ -164,11 +164,22 @@
         }
       },
 
-      scrollToBottom() {
+      scrollToLastUserMessage() {
         const { messagesContainer } = this.elements;
 
         setTimeout(() => {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          const lastUserMessage = [
+            ...messagesContainer.querySelectorAll(".items-end"),
+          ].pop();
+
+          if (lastUserMessage) {
+            lastUserMessage.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          } else {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
         }, CONFIG.TIMING.SCROLL_DELAY);
       },
 
@@ -178,7 +189,7 @@
         const typingIndicator = ShopifyAgent.Util.createTypingIndicator();
         messagesContainer.appendChild(typingIndicator);
 
-        this.scrollToBottom();
+        this.scrollToLastUserMessage();
         this.disableInput();
       },
 
@@ -304,7 +315,7 @@
           messagesContainer.appendChild(messageElement);
         }
 
-        ShopifyAgent.UI.scrollToBottom();
+        ShopifyAgent.UI.scrollToLastUserMessage();
       },
 
       addSuggestions(suggestions, messagesContainer) {
@@ -312,7 +323,7 @@
           ShopifyAgent.Util.createSuggestionGroup(suggestions);
         messagesContainer.appendChild(suggestionGroup);
 
-        ShopifyAgent.UI.scrollToBottom();
+        ShopifyAgent.UI.scrollToLastUserMessage();
       },
 
       grayOutAllSuggestions(messagesContainer) {
