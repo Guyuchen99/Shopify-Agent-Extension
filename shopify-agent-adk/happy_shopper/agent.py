@@ -23,11 +23,40 @@ SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN")
 SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN")
 
 
-class AgentOutput(BaseModel):
-    message: str = Field(description="Your response to the user")
-    suggestions: List[str] = Field(
-        description="User's possible follow-up reply based on your response",
+class ProductsComponent(BaseModel):
+    items: List[str] = Field(..., description="List of product names")
+
+
+class TableComponent(BaseModel):
+    headers: List[str] = Field(..., description="Table headers")
+    rows: List[List[str]] = Field(..., description="Table rows")
+    summary: str = Field(..., description="One-sentence summary of table insights")
+
+
+class Suggestions(BaseModel):
+    type: str = Field(
+        ...,
+        description="Must be 'default' or a product option type (e.g., 'colors', 'sizes', 'materials', etc.)",
+    )
+    payload: List[str] = Field(
+        ...,
+        description="List of suggested user replies",
         min_length=2,
+    )
+
+
+class AgentOutput(BaseModel):
+    message: str = Field(..., description="Your response to the user")
+    productComponent: Optional[ProductsComponent] = Field(
+        None,
+        description="Optional products component attached to your response",
+    )
+    tableComponent: Optional[TableComponent] = Field(
+        None,
+        description="Optional table component attached to your response",
+    )
+    suggestions: Suggestions = Field(
+        ..., description="Suggested user replies based on your response"
     )
 
 
