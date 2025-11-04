@@ -88,7 +88,14 @@ async def inject_agent_message(session_id: str, message: str):
     try:
         invocation_id = f"e-{uuid.uuid4()}"
 
-        model_message = json.dumps({"message": message, "suggestions": []})
+        model_message = json.dumps(
+            {
+                "message": message,
+                "productComponent": None,
+                "tableComponent": None,
+                "suggestions": {"type": "default", "payload": []},
+            }
+        )
 
         client.agent_engines.sessions.events.append(
             name=f"{AGENT_ENGINE_BASE_URL}/sessions/{session_id}",
