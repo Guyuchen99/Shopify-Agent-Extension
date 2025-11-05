@@ -301,16 +301,36 @@
         }
       },
 
-      addMessage(messageContent, messageSender, messagesContainer) {
-        const lines = messageContent.split(/\n+/).filter(Boolean);
+      addMessage(
+        messageContent,
+        messageSender,
+        messagesContainer,
+        productComponent,
+        tableComponent,
+      ) {
+        const lines = messageContent
+          .replace(/\\n/g, "\n")
+          .split(/\n+/)
+          .filter(Boolean);
 
-        for (let i = 0; i < lines.length; i += 2) {
-          const twoLineChunk = lines.slice(i, i + 2).join(" ");
+        for (let i = 0; i < lines.length; i++) {
+          const lineChunk = lines[i];
 
-          const messageElement = ShopifyAgent.Util.createMessageElement(
-            twoLineChunk,
-            messageSender,
-          );
+          let messageElement;
+
+          if (i === 0) {
+            messageElement = ShopifyAgent.Util.createMessageElement(
+              lineChunk,
+              messageSender,
+              productComponent,
+              tableComponent,
+            );
+          } else {
+            messageElement = ShopifyAgent.Util.createMessageElement(
+              lineChunk,
+              messageSender,
+            );
+          }
 
           messagesContainer.appendChild(messageElement);
         }
@@ -365,11 +385,20 @@
       parseMessageContent(messageContent, messagesContainer) {
         try {
           if (messageContent.message) {
-            this.addMessage(messageContent.message, "model", messagesContainer);
+            this.addMessage(
+              messageContent.message,
+              "model",
+              messagesContainer,
+              messageContent?.productComponent,
+              messageContent?.tableComponent,
+            );
           }
 
-          if (messageContent.suggestions.length > 0) {
-            this.addSuggestions(messageContent.suggestions, messagesContainer);
+          if (messageContent.suggestions.payload.length > 0) {
+            this.addSuggestions(
+              messageContent.suggestions.payload,
+              messagesContainer,
+            );
           }
         } catch (error) {
           this.addMessage(messageContent, "model", messagesContainer);
@@ -660,10 +689,15 @@
         return typingElement;
       },
 
-      createMessageElement(messageContent, messageSender) {
+      createMessageElement(
+        messageContent,
+        messageSender,
+        productComponent,
+        tableComponent,
+      ) {
         const messageElement = document.createElement("div");
         messageElement.className = `flex flex-col gap-0 ${
-          messageSender === "model" ? "items-start" : "items-end mt-2"
+          messageSender === "model" ? "items-start" : "items-end pt-2"
         }`;
 
         const messageAvator = this.createMessageAvator(messageSender);
@@ -671,6 +705,8 @@
         const messageBubble = this.createMessageBubble(
           messageContent,
           messageSender,
+          productComponent,
+          tableComponent,
         );
 
         messageElement.appendChild(messageAvator);
@@ -708,7 +744,12 @@
         return messageAvator;
       },
 
-      createMessageBubble(messageContent, messageSender) {
+      createMessageBubble(
+        messageContent,
+        messageSender,
+        productComponent,
+        tableComponent,
+      ) {
         const messageBubble = document.createElement("div");
         messageBubble.className = `relative text-sm max-w-[83%] break-words rounded-md px-3.5 py-3 leading-snug ${
           messageSender === "model"
@@ -724,17 +765,38 @@
 
           messageBubble.appendChild(lineDiv);
 
-          const products = ShopifyAgent.Util.getLatestProducts();
+          if (tableComponent) {
+            const table = this.createComparisonTable(
+              tableComponent.headers,
+              tableComponent.rows,
+            );
+            messageBubble.appendChild(table);
 
-          const matchedProducts = products.filter((product) =>
-            messageContent.toLowerCase().includes(product.title.toLowerCase()),
-          );
+            const tableSummary = document.createElement("div");
+            tableSummary.innerHTML = this.formatMessageContent(
+              tableComponent.summary,
+            );
 
-          if (matchedProducts.length > 0) {
-            matchedProducts.forEach((product) => {
-              const productCard = ShopifyAgent.Util.createProductCard(product);
-              messageBubble.appendChild(productCard);
-            });
+            messageBubble.appendChild(tableSummary);
+          } else if (productComponent) {
+            const messageProducts = productComponent.items;
+            const products = ShopifyAgent.Util.getLatestProducts();
+
+            const matchedProducts = products.filter((product) =>
+              messageProducts.some(
+                (productTitle) =>
+                  productTitle.trim().toLowerCase() ===
+                  product.title.trim().toLowerCase(),
+              ),
+            );
+
+            if (matchedProducts.length > 0) {
+              matchedProducts.forEach((product) => {
+                const productCard =
+                  ShopifyAgent.Util.createProductCard(product);
+                messageBubble.appendChild(productCard);
+              });
+            }
           }
         }
 
@@ -786,6 +848,64 @@
         });
 
         return productCard;
+      },
+
+      createComparisonTable(tableHeaders, tableRows) {
+        const comparisonTableWrapper = document.createElement("div");
+        comparisonTableWrapper.style.scrollbarWidth = "thin";
+        comparisonTableWrapper.className = "overflow-x-auto mt-2 mb-3";
+
+        const comparisonTable = document.createElement("table");
+        comparisonTable.className =
+          "agent-comparison-table border border-black bg-white";
+
+        const thead = document.createElement("thead");
+        thead.className = "bg-gray-200";
+
+        const tr = document.createElement("tr");
+        tableHeaders.forEach((headerText, index) => {
+          const th = document.createElement("th");
+          th.textContent = headerText;
+          th.className =
+            "border-r border-black px-2.5 py-1.5 font-semibold text-black text-xs";
+
+          if (index > 0) {
+            th.classList.add("text-center");
+          } else {
+            th.classList.add("text-left");
+          }
+
+          tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+
+        const tbody = document.createElement("tbody");
+        tableRows.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-t border-black";
+
+          row.forEach((cell, index) => {
+            const td = document.createElement("td");
+            td.textContent = cell;
+            td.className =
+              "border-r border-black px-2.5 py-1.5 font-medium text-black text-xxs";
+
+            if (index > 0) {
+              td.classList.add("text-center");
+            } else {
+              td.classList.add("text-left");
+            }
+            tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+        });
+
+        comparisonTable.appendChild(thead);
+        comparisonTable.appendChild(tbody);
+        comparisonTableWrapper.appendChild(comparisonTable);
+
+        return comparisonTableWrapper;
       },
 
       createSuggestionGroup(suggestions) {
