@@ -262,7 +262,7 @@
             currentHeader.innerHTML = newHeader.innerHTML;
           }
         } catch (error) {
-          console.error("Error in UI.refreshCartUI: ", error);
+          console.error("Something went wrong in UI.refreshCartUI: ", error);
         }
       },
     },
@@ -291,7 +291,7 @@
             messagesContainer,
           );
         } catch (error) {
-          console.error("Error in Message.sendMessage: ", error);
+          console.error("Something went wrong in Message.sendMessage: ", error);
           ShopifyAgent.UI.removeTypingIndicator();
           this.addMessage(
             "Sorry, I couldn't process your request at the moment. Please try again later.",
@@ -401,7 +401,15 @@
             );
           }
         } catch (error) {
-          this.addMessage(messageContent, "model", messagesContainer);
+          console.error(
+            "Something went wrong in Message.parseMessageContent: ",
+            error,
+          );
+          this.addMessage(
+            "Sorry, our connection just got disconnected for a second. Could you please try again?",
+            "model",
+            messagesContainer,
+          );
         }
       },
     },
@@ -422,7 +430,10 @@
             ShopifyAgent.UI.elements.messagesContainer,
           );
         } catch (error) {
-          console.error("Error in API.injectAgentMessage: ", error);
+          console.error(
+            "Something went wrong in API.injectAgentMessage: ",
+            error,
+          );
         }
       },
 
@@ -467,7 +478,7 @@
 
           ShopifyAgent.UI.removeTypingIndicator();
         } catch (error) {
-          console.error("Error in API.oneShotResponse: ", error);
+          console.error("Something went wrong in API.oneShotResponse: ", error);
           throw error;
         }
       },
@@ -506,7 +517,7 @@
               }
             } catch (error) {
               console.error(
-                "Failed to parse search_shop_catalog payload: ",
+                "Something went wrong in API.handleResponseEvent (search_shop_catalog): ",
                 error,
               );
             }
@@ -532,7 +543,7 @@
 
           return data?.sessionId;
         } catch (error) {
-          console.error("Error in API.createSession: ", error);
+          console.error("Something went wrong in API.createSession: ", error);
           return null;
         }
       },
@@ -550,7 +561,10 @@
 
           return data?.latestSessionId;
         } catch (error) {
-          console.error("Error in API.fetchLatestSession: ", error);
+          console.error(
+            "Something went wrong in API.fetchLatestSession: ",
+            error,
+          );
           return null;
         }
       },
@@ -598,7 +612,10 @@
             );
           }
         } catch (error) {
-          console.error("Error in API.fetchChatHistory: ", error);
+          console.error(
+            "Something went wrong in API.fetchChatHistory: ",
+            error,
+          );
           messagesContainer.removeChild(loadingMessage);
           ShopifyAgent.Message.addMessage(
             "Failed to load conversation history.",
@@ -614,7 +631,10 @@
           const data = await response.json();
           return data.products[0].variants[0].id;
         } catch (error) {
-          console.error("Error in API.fetchFirstProductID: ", error);
+          console.error(
+            "Something went wrong in API.fetchFirstProductID: ",
+            error,
+          );
           return null;
         }
       },
@@ -625,7 +645,7 @@
           const data = await response.json();
           return data.token;
         } catch (error) {
-          console.error("Error in API.fetchCartId: ", error);
+          console.error("Something went wrong in API.fetchCartId: ", error);
           return null;
         }
       },
@@ -650,7 +670,7 @@
 
           return await this.fetchCartId();
         } catch (error) {
-          console.error("Error in API.updateCartId: ", error);
+          console.error("Something went wrong in API.updateCartId: ", error);
           return null;
         }
       },
@@ -997,7 +1017,7 @@
           return JSON.parse(latestProducts);
         } catch (error) {
           console.error(
-            "Failed to parse products from sessionStorage: ",
+            "Something went wrong in Util.getLatestProducts: ",
             error,
           );
           return [];
