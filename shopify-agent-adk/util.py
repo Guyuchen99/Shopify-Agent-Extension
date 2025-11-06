@@ -5,9 +5,6 @@ import vertexai
 from absl import app, flags
 from dotenv import load_dotenv
 from vertexai import agent_engines
-from vertexai.preview import reasoning_engines
-
-from happy_shopper.agent import root_agent
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("project_id", None, "GCP project ID.")
@@ -17,6 +14,7 @@ flags.DEFINE_string("resource_id", None, "ReasoningEngine resource ID.")
 flags.DEFINE_string("user_id", "test_user", "User ID for session operations.")
 flags.DEFINE_string("session_id", None, "Session ID for operations.")
 flags.DEFINE_bool("create", False, "Creates a new deployment.")
+flags.DEFINE_bool("create2", False, "Creates a new deployment2.")
 flags.DEFINE_bool("delete", False, "Deletes an existing deployment.")
 flags.DEFINE_bool("list", False, "Lists all deployments.")
 flags.DEFINE_bool("create_session", False, "Creates a new session.")
@@ -31,6 +29,7 @@ flags.DEFINE_string(
 flags.mark_bool_flags_as_mutual_exclusive(
     [
         "create",
+        "create2",
         "delete",
         "list",
         "create_session",
@@ -43,8 +42,11 @@ flags.mark_bool_flags_as_mutual_exclusive(
 
 def create() -> None:
     """Creates a new deployment."""
+
+    from happy_shopper.agent import root_agent
+
     # First wrap the agent in AdkApp
-    app = reasoning_engines.AdkApp(
+    app = agent_engines.AdkApp(
         agent=root_agent,
         enable_tracing=True,
     )
@@ -54,14 +56,41 @@ def create() -> None:
         agent_engine=app,
         display_name="happy_shopper",
         requirements=[
-            "google-adk",
-            "google-cloud-aiplatform[adk,agent_engines]",
+            "google-adk===1.16.0",
+            "google-cloud-aiplatform[adk,agent_engines===1.112.0",
             "python-dotenv",
             "cloudpickle",
             "pydantic",
         ],
         env_vars=["SHOPIFY_ADMIN_TOKEN", "SHOPIFY_DOMAIN"],
         extra_packages=["./happy_shopper"],
+    )
+    print(f"Created remote app: {remote_app.resource_name}")
+
+
+def create2() -> None:
+    """Creates a new deployment."""
+
+    from happy_advisor.agent import root_agent
+
+    # First wrap the agent in AdkApp
+    app = agent_engines.AdkApp(
+        agent=root_agent,
+        enable_tracing=True,
+    )
+
+    # Now deploy to Agent Engine
+    remote_app = agent_engines.create(
+        agent_engine=app,
+        display_name="happy_advisor",
+        requirements=[
+            "google-adk===1.16.0",
+            "google-cloud-aiplatform[adk,agent_engines]===1.112.0",
+            "python-dotenv",
+            "cloudpickle",
+            "pydantic",
+        ],
+        extra_packages=["./happy_advisor"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
 
@@ -169,6 +198,8 @@ def main(argv=None):
 
     if FLAGS.create:
         create()
+    elif FLAGS.create2:
+        create2()
     elif FLAGS.delete:
         if not FLAGS.resource_id:
             print("resource_id is required for delete")
