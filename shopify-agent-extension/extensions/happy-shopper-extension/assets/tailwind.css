@@ -189,3 +189,31 @@
   transform: translate(0px, -1.5px) scale(1.05);
   z-index: 5;
 }
+
+.advisor-chat-bubble::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  left: calc(100% - 2px);
+  bottom: 0.65rem;
+  clip-path: polygon(60% 100%, 0 0, 0 70%);
+  z-index: 10;
+}
+
+.advisor-chat-bubble::after {
+  content: "";
+  position: absolute;
+  width: 1.8rem;
+  height: 1.8rem;
+  left: calc(100% + 1px);
+  bottom: 0.65rem;
+  clip-path: polygon(60% 100%, 0 0, 0 70%);
+  transform: translate(0px, 4px) scale(1.05);
+  z-index: 5;
+}
+
+.text-xxs {
+  font-size: 0.625rem;
+  line-height: 0.75rem;
+}

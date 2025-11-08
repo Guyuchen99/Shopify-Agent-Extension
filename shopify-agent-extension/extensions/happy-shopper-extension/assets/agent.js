@@ -825,6 +825,8 @@
               }
             });
 
+            ShopifyAgent.Util.removeAdvisorMessage();
+            ShopifyAgent.Util.removeAdvisorSuggestions();
             ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
           }
         } catch (error) {
@@ -1140,7 +1142,7 @@
 
       createMessageBubbleForAdvisor(messageContent) {
         const messageBubble = document.createElement("div");
-        messageBubble.className = `advisor-chat-bubble absolute bottom-2/3 right-full w-56 break-words rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 text-sm leading-snug text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+        messageBubble.className = `advisor-chat-bubble absolute bottom-2/3 right-full w-56 break-words rounded-md border-2 border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 text-sm leading-snug text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
 
         messageBubble.innerHTML = this.formatMessageContent(messageContent);
 
