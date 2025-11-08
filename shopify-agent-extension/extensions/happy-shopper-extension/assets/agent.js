@@ -2,13 +2,19 @@
   const CONFIG = {
     API_BASE_URL:
       "https://happy-shopper-extension-412794838331.us-central1.run.app",
+    ADVISOR_STOP_FLAG: false,
+    INTERVAL_ID: null,
     STORAGE_KEYS: {
-      USER_ID: "shopifyAgentUserId",
-      SESSION_ID: "shopifyAgentSessionId",
-      CHAT_OPEN: "shopifyAgentChatOpen",
-      LATEST_PRODUCTS: "shopifyAgentLatestProducts",
+      AGENT_CHAT_OPEN: "shopifyAgentChatOpen",
+      AGENT_USER_ID: "shopifyAgentUserId",
+      AGENT_SESSION_ID: "shopifyAgentSessionId",
+      AGENT_LATEST_PRODUCTS: "shopifyAgentLatestProducts",
+      ADVISOR_SESSION_ID: "shopifyAdvisorSessionId",
+      ADVISOR_MESSAGE: "shopifyAdvisorMessage",
+      ADVISOR_SUGGESTIONS: "shopifyAdvisorSuggestions",
     },
     TIMING: {
+      INTERVAL_DELAY: 13000,
       FOCUS_DELAY: 300,
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
@@ -36,9 +42,7 @@
           chatBubble: container.querySelector(".shopify-agent-bubble"),
           chatWindow: container.querySelector(".shopify-agent-window"),
           closeButton: container.querySelector(".shopify-agent-close"),
-          chatInput: container.querySelector(
-            '.shopify-agent-input input[type="text"]',
-          ),
+          chatInput: container.querySelector(".shopify-agent-input"),
           sendButton: container.querySelector(".shopify-agent-send"),
           messagesContainer: container.querySelector(".shopify-agent-messages"),
         };
@@ -51,13 +55,8 @@
       },
 
       setUpEventListeners() {
-        const {
-          chatBubble,
-          closeButton,
-          chatInput,
-          sendButton,
-          messagesContainer,
-        } = this.elements;
+        const { chatBubble, closeButton, chatInput, sendButton } =
+          this.elements;
 
         // Toggle chat when bubble clicked
         chatBubble.addEventListener("click", () => this.toggleChatWindow());
@@ -68,7 +67,7 @@
         // Send on enter key
         chatInput.addEventListener("keydown", (e) => {
           if (e.key === "Enter" && this.isInputValid()) {
-            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
+            ShopifyAgent.Message.sendMessageForAgent();
 
             // Hide keyboard on mobile
             if (this.isMobile) {
@@ -81,7 +80,7 @@
         // Send on click
         sendButton.addEventListener("click", () => {
           if (this.isInputValid()) {
-            ShopifyAgent.Message.sendMessage(chatInput, messagesContainer);
+            ShopifyAgent.Message.sendMessageForAgent();
 
             // Focus input after sending on mobile
             if (this.isMobile) {
@@ -92,6 +91,18 @@
 
         // Keep messages pinned to bottom on resize
         window.addEventListener("resize", () => this.scrollToLastUserMessage());
+      },
+
+      toggleChatWindow() {
+        const { chatWindow } = this.elements;
+        const isOpen = chatWindow.classList.contains("opacity-100");
+        if (isOpen) {
+          this.closeChatWindow();
+        } else {
+          this.openChatWindow();
+        }
+
+        ShopifyAgent.Util.watchAgentChatState();
       },
 
       openChatWindow() {
@@ -108,7 +119,7 @@
           "translate-y-0",
         );
 
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.CHAT_OPEN, "true");
+        ShopifyAgent.Util.setAgentChatState("true");
 
         // Focus input & lock scroll on mobile
         if (this.isMobile) {
@@ -139,7 +150,7 @@
           "translate-y-2",
         );
 
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.CHAT_OPEN, "false");
+        ShopifyAgent.Util.setAgentChatState("false");
 
         // Unlock scroll when closed
         document.body.classList.remove(
@@ -154,16 +165,6 @@
         }
       },
 
-      toggleChatWindow() {
-        const { chatWindow } = this.elements;
-        const isOpen = chatWindow.classList.contains("opacity-100");
-        if (isOpen) {
-          this.closeChatWindow();
-        } else {
-          this.openChatWindow();
-        }
-      },
-
       scrollToLastUserMessage() {
         const { messagesContainer } = this.elements;
 
@@ -174,6 +175,25 @@
 
           if (lastUserMessage) {
             lastUserMessage.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          } else {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }, CONFIG.TIMING.SCROLL_DELAY);
+      },
+
+      scrollToAdvisorMessage() {
+        const { messagesContainer } = this.elements;
+
+        setTimeout(() => {
+          const advisorMessage = messagesContainer.querySelector(
+            '[data-message-element-temp="true"]',
+          );
+
+          if (advisorMessage) {
+            advisorMessage.scrollIntoView({
               behavior: "smooth",
               block: "start",
             });
@@ -203,6 +223,7 @@
         if (typingIndicator) {
           typingIndicator.remove();
         }
+
         this.enableInput();
       },
 
@@ -214,22 +235,6 @@
           !chatInput.disabled &&
           !sendButton.disabled
         );
-      },
-
-      disableInput() {
-        const { chatInput, sendButton } = this.elements;
-
-        chatInput.disabled = true;
-        chatInput.placeholder = "Waiting for response...";
-        chatInput.classList.add("opacity-50", "cursor-not-allowed");
-
-        sendButton.disabled = true;
-        sendButton.classList.add("opacity-50", "cursor-not-allowed");
-
-        document.querySelectorAll(".agent-product-card").forEach((card) => {
-          card.style.cursor = "not-allowed";
-          card.classList.add("opacity-50");
-        });
       },
 
       enableInput() {
@@ -245,6 +250,22 @@
         document.querySelectorAll(".agent-product-card").forEach((card) => {
           card.style.cursor = "pointer";
           card.classList.remove("opacity-50");
+        });
+      },
+
+      disableInput() {
+        const { chatInput, sendButton } = this.elements;
+
+        chatInput.disabled = true;
+        chatInput.placeholder = "Waiting for response...";
+        chatInput.classList.add("opacity-50", "cursor-not-allowed");
+
+        sendButton.disabled = true;
+        sendButton.classList.add("opacity-50", "cursor-not-allowed");
+
+        document.querySelectorAll(".agent-product-card").forEach((card) => {
+          card.style.cursor = "not-allowed";
+          card.classList.add("opacity-50");
         });
       },
 
@@ -268,46 +289,60 @@
     },
 
     Message: {
-      async sendMessage(chatInput, messagesContainer) {
-        const userMessage = chatInput.value.trim();
+      async sendMessageForAgent() {
+        const { chatInput } = ShopifyAgent.UI.elements;
 
-        this.grayOutAllSuggestions(messagesContainer);
-
-        let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
-        let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
+        this.grayOutAllSuggestionsForAgent();
 
         // Add user message to chat and clear input
-        this.addMessage(userMessage, "user", messagesContainer);
+        const userMessage = chatInput.value.trim();
+        this.addMessageForAgent(userMessage, "user", null, null);
         chatInput.value = "";
 
         // Show typing indicator
         ShopifyAgent.UI.showTypingIndicator();
 
-        try {
-          await ShopifyAgent.API.oneShotResponse(
-            userId,
-            sessionId,
-            userMessage,
-            messagesContainer,
+        const agentUserId = ShopifyAgent.Util.getAgentUserId();
+        const agentSessionId = ShopifyAgent.Util.getAgentSessionId();
+        const advisorMessageElement = document.querySelector(
+          '[data-message-element-temp="true"]',
+        );
+        const advisorSggestionGroup = document.querySelector(
+          "[data-suggestion-group-temp='true']",
+        );
+
+        if (advisorMessageElement && advisorSggestionGroup) {
+          delete advisorMessageElement.dataset.messageElementTemp;
+          delete advisorSggestionGroup.dataset.suggestionGroupTemp;
+
+          const advisorMessage = ShopifyAgent.Util.getAdvisorMessage();
+          const advisorSuggestions = ShopifyAgent.Util.getAdvisorSuggestions();
+
+          await ShopifyAgent.API.injectAgentMessageFromAdvisor(
+            agentSessionId,
+            advisorMessage,
+            advisorSuggestions,
           );
-        } catch (error) {
-          console.error("Something went wrong in Message.sendMessage: ", error);
-          ShopifyAgent.UI.removeTypingIndicator();
-          this.addMessage(
-            "Sorry, I couldn't process your request at the moment. Please try again later.",
-            "model",
-            messagesContainer,
-          );
+
+          ShopifyAgent.Util.removeAdvisorMessage();
+          ShopifyAgent.Util.removeAdvisorSuggestions();
         }
+
+        await ShopifyAgent.API.oneShotResponseForAgent(
+          agentUserId,
+          agentSessionId,
+          userMessage,
+        );
       },
 
-      addMessage(
+      addMessageForAgent(
         messageContent,
         messageSender,
-        messagesContainer,
         productComponent,
         tableComponent,
       ) {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
         const lines = messageContent
           .replace(/\\n/g, "\n")
           .split(/\n+/)
@@ -319,14 +354,14 @@
           let messageElement;
 
           if (i === 0) {
-            messageElement = ShopifyAgent.Util.createMessageElement(
+            messageElement = ShopifyAgent.Util.createMessageElementForAgent(
               lineChunk,
               messageSender,
               productComponent,
               tableComponent,
             );
           } else {
-            messageElement = ShopifyAgent.Util.createMessageElement(
+            messageElement = ShopifyAgent.Util.createMessageElementForAgent(
               lineChunk,
               messageSender,
             );
@@ -338,15 +373,68 @@
         ShopifyAgent.UI.scrollToLastUserMessage();
       },
 
-      addSuggestions(suggestions, messagesContainer) {
+      addMessageForAgentFromAdvisor(messageContent) {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
+        const messageElement = ShopifyAgent.Util.createMessageElementForAgent(
+          messageContent,
+          "model",
+          null,
+          null,
+        );
+
+        messageElement.dataset.messageElementTemp = "true";
+
+        messagesContainer.appendChild(messageElement);
+      },
+
+      removeMessageForAgentFromAdvisor() {
+        const messageElement = document.querySelector(
+          '[data-message-element-temp="true"]',
+        );
+
+        if (messageElement) {
+          messageElement.remove();
+        }
+      },
+
+      addSuggestionsForAgent(suggestions) {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
         const suggestionGroup =
-          ShopifyAgent.Util.createSuggestionGroup(suggestions);
+          ShopifyAgent.Util.createSuggestionGroupForAgent(suggestions);
+
         messagesContainer.appendChild(suggestionGroup);
 
         ShopifyAgent.UI.scrollToLastUserMessage();
       },
 
-      grayOutAllSuggestions(messagesContainer) {
+      addSuggestionsForAgentFromAdvisor(suggestions) {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
+        const suggestionGroup =
+          ShopifyAgent.Util.createSuggestionGroupForAgent(suggestions);
+
+        suggestionGroup.dataset.suggestionGroupTemp = "true";
+
+        messagesContainer.appendChild(suggestionGroup);
+
+        ShopifyAgent.UI.scrollToAdvisorMessage();
+      },
+
+      removeSuggestionsForAgentFromAdvisor() {
+        const suggestionGroup = document.querySelector(
+          '[data-suggestion-group-temp="true"]',
+        );
+
+        if (suggestionGroup) {
+          suggestionGroup.remove();
+        }
+      },
+
+      grayOutAllSuggestionsForAgent() {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
         const suggestionGroups = messagesContainer.querySelectorAll(
           '[data-suggestion-group="true"]',
         );
@@ -356,12 +444,18 @@
         suggestionGroups.forEach((group) => {
           const suggestionButtons = group.querySelectorAll("button");
           suggestionButtons.forEach((button) => {
-            ShopifyAgent.Util.grayOutSuggestionButton(button);
+            if (button.classList.contains(`bg-${CONFIG.THEME_COLOR}-300`)) {
+              return;
+            }
+
+            ShopifyAgent.Util.grayOutSuggestionButtonForAgent(button);
           });
         });
       },
 
-      grayOutHistoricalSuggestions(messagesContainer) {
+      grayOutHistoricalSuggestionsForAgent() {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
         const suggestionGroups = messagesContainer.querySelectorAll(
           '[data-suggestion-group="true"]',
         );
@@ -376,58 +470,137 @@
           suggestionButtons.forEach((button) => {
             if (!isLatestGroup) {
               // Gray out historical suggestions
-              ShopifyAgent.Util.grayOutSuggestionButton(button);
+              ShopifyAgent.Util.grayOutSuggestionButtonForAgent(button);
             }
           });
         });
       },
 
-      parseMessageContent(messageContent, messagesContainer) {
+      parseMessageContentForAgent(messageContent) {
         try {
           if (messageContent.message) {
-            this.addMessage(
+            this.addMessageForAgent(
               messageContent.message,
               "model",
-              messagesContainer,
               messageContent?.productComponent,
               messageContent?.tableComponent,
             );
           }
 
           if (messageContent.suggestions.payload.length > 0) {
-            this.addSuggestions(
-              messageContent.suggestions.payload,
-              messagesContainer,
-            );
+            this.addSuggestionsForAgent(messageContent.suggestions.payload);
           }
         } catch (error) {
           console.error(
-            "Something went wrong in Message.parseMessageContent: ",
+            "Something went wrong in Message.parseMessageContentForAgent: ",
             error,
           );
-          this.addMessage(
+          this.addMessageForAgent(
             "Sorry, our connection just got disconnected for a second. Could you please try again?",
             "model",
-            messagesContainer,
+            null,
+            null,
           );
+        }
+      },
+
+      addMessageForAdvisor(messageContent) {
+        const { container } = ShopifyAgent.UI.elements;
+        const { message, suggestions } = messageContent;
+
+        const messageBubble =
+          ShopifyAgent.Util.createMessageBubbleForAdvisor(message);
+
+        if (CONFIG.ADVISOR_STOP_FLAG) return;
+
+        ShopifyAgent.Util.setAdvisorMessage(message);
+        ShopifyAgent.Util.setAdvisorSuggestions(suggestions);
+
+        container.appendChild(messageBubble);
+      },
+
+      removeMessageForAdvisor() {
+        const messageBubble = document.querySelector(".advisor-chat-bubble");
+
+        if (messageBubble) {
+          messageBubble.remove();
+        }
+      },
+
+      parseMessageContentForAdvisor(messageContent) {
+        try {
+          const parsedContent = JSON.parse(messageContent);
+
+          if (parsedContent.message && parsedContent.suggestions) {
+            this.addMessageForAdvisor(parsedContent);
+          }
+        } catch (error) {
+          console.error(
+            "Something went wrong in Message.parseMessageContentForAdvisor: ",
+            error,
+          );
+        }
+      },
+
+      generateUserMessageForAdvisor(shopifyHandle) {
+        switch (true) {
+          case shopifyHandle.includes("/collections/all"): {
+            return "I am on the products catalog page.";
+          }
+
+          case shopifyHandle.includes("/products/"): {
+            const product = shopifyHandle.split("/products/")[1]?.split("?")[0];
+            return `I am looking for ${product.replace(/-/g, " ")}.`;
+          }
+
+          case shopifyHandle.includes("/pages/"): {
+            const page = shopifyHandle.split("/pages/")[1];
+            return `I am on the ${page.replace(/-/g, " ")} page.`;
+          }
+
+          case shopifyHandle.includes("/policies/"): {
+            const policy = shopifyHandle.split("/policies/")[1];
+            return `I am on the ${policy.replace(/-/g, " ")} policy page.`;
+          }
+
+          case shopifyHandle.includes("/account/"): {
+            const accountPage = shopifyHandle.split("/account/")[1] || "main";
+            return `I am on the account ${accountPage.replace(/-/g, " ")} page.`;
+          }
+
+          case shopifyHandle.includes("/search"): {
+            const searchTerm =
+              shopifyHandle.split("/search?q=")[1].split("&")[0] || "";
+
+            return searchTerm
+              ? `I am on the search page looking for ${searchTerm}.`
+              : "I am on the search page.";
+          }
+
+          default:
+            return "I am on the home page.";
         }
       },
     },
 
     API: {
-      async injectAgentMessage(sessionId, agentMessage) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${sessionId}/inject-agent-message?message=${encodeURIComponent(agentMessage)}`;
+      async injectAgentMessage(agentSessionId, agentMessage) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentSessionId}/inject-agent-message`;
 
         try {
           await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: agentMessage,
+            }),
           });
 
-          ShopifyAgent.Message.addMessage(
+          ShopifyAgent.Message.addMessageForAgent(
             agentMessage,
             "model",
-            ShopifyAgent.UI.elements.messagesContainer,
+            null,
+            null,
           );
         } catch (error) {
           console.error(
@@ -437,13 +610,40 @@
         }
       },
 
-      async oneShotResponse(userId, sessionId, userMessage, messagesContainer) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/${sessionId}/send-message?message=${encodeURIComponent(userMessage)}`;
+      async injectAgentMessageFromAdvisor(
+        agentSessionId,
+        advisorMessage,
+        advisorSuggestions,
+      ) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentSessionId}/inject-agent-message-from-advisor`;
+
+        try {
+          await fetch(requestUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: advisorMessage,
+              suggestions: advisorSuggestions,
+            }),
+          });
+        } catch (error) {
+          console.error(
+            "Something went wrong in API.injectAgentMessageFromAdvisor: ",
+            error,
+          );
+        }
+      },
+
+      async oneShotResponseForAgent(agentUserId, agentSessionId, userMessage) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/${agentSessionId}/send-agent-message`;
 
         try {
           const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userMessage,
+            }),
           });
 
           const reader = response.body.getReader();
@@ -469,7 +669,7 @@
                 const rawEvent = line.replace(/^data:\s*/, "");
                 const parsedEvent = JSON.parse(rawEvent);
 
-                this.handleResponseEvent(parsedEvent, messagesContainer);
+                this.handleResponseEventForAgent(parsedEvent);
               }
             }
 
@@ -478,17 +678,25 @@
 
           ShopifyAgent.UI.removeTypingIndicator();
         } catch (error) {
-          console.error("Something went wrong in API.oneShotResponse: ", error);
-          throw error;
+          console.error(
+            "Something went wrong in API.oneShotResponseForAgent: ",
+            error,
+          );
+          ShopifyAgent.UI.removeTypingIndicator();
+          ShopifyAgent.Message.addMessageForAgent(
+            "Sorry, I couldn't process your request at the moment. Please try again later.",
+            "model",
+            null,
+            null,
+          );
         }
       },
 
-      handleResponseEvent(event, messagesContainer) {
+      handleResponseEventForAgent(event) {
         event.content?.parts?.forEach((part) => {
           if (part.function_call?.name === "set_model_response") {
-            ShopifyAgent.Message.parseMessageContent(
+            ShopifyAgent.Message.parseMessageContentForAgent(
               part.function_call?.args,
-              messagesContainer,
             );
           }
 
@@ -501,7 +709,8 @@
               const products = parsedContent.products;
 
               if (products.length) {
-                const currentProducts = ShopifyAgent.Util.getLatestProducts();
+                const currentProducts =
+                  ShopifyAgent.Util.getAgentLatestProducts();
 
                 const combinedProducts = [...currentProducts, ...products];
 
@@ -513,11 +722,11 @@
 
                 const uniqueProducts = Array.from(productsMap.values());
 
-                ShopifyAgent.Util.setLatestProducts(uniqueProducts);
+                ShopifyAgent.Util.setAgentLatestProducts(uniqueProducts);
               }
             } catch (error) {
               console.error(
-                "Something went wrong in API.handleResponseEvent (search_shop_catalog): ",
+                "Something went wrong in API.handleResponseEventForAgent (search_shop_catalog): ",
                 error,
               );
             }
@@ -530,26 +739,32 @@
         });
       },
 
-      async createSession(userId, cartId) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/create-session?cart_id=${encodeURIComponent(cartId)}`;
+      async createSessionForAgent(agentUserId, cartId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/create-agent-session`;
 
         try {
           const response = await fetch(requestUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cart_id: cartId,
+            }),
           });
 
           const { data } = await response.json();
 
           return data?.sessionId;
         } catch (error) {
-          console.error("Something went wrong in API.createSession: ", error);
+          console.error(
+            "Something went wrong in API.createSessionForAgent: ",
+            error,
+          );
           return null;
         }
       },
 
-      async fetchLatestSession(userId) {
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${userId}/latest-session`;
+      async fetchLatestSessionForAgent(agentUserId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/latest-agent-session`;
 
         try {
           const response = await fetch(requestUrl, {
@@ -562,21 +777,25 @@
           return data?.latestSessionId;
         } catch (error) {
           console.error(
-            "Something went wrong in API.fetchLatestSession: ",
+            "Something went wrong in API.fetchLatestSessionForAgent: ",
             error,
           );
           return null;
         }
       },
 
-      async fetchChatHistory(sessionId, messagesContainer) {
-        const loadingMessage = ShopifyAgent.Util.createMessageElement(
+      async fetchChatHistoryForAgent(agentSessionId) {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
+        const loadingMessage = ShopifyAgent.Util.createMessageElementForAgent(
           "Loading conversation history...",
           "model",
+          null,
+          null,
         );
         messagesContainer.appendChild(loadingMessage);
 
-        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${sessionId}/history`;
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentSessionId}/agent-history`;
 
         try {
           const response = await fetch(requestUrl, {
@@ -596,20 +815,17 @@
               if (!text) return;
 
               if (role === "user") {
-                ShopifyAgent.Message.addMessage(text, role, messagesContainer);
+                ShopifyAgent.Message.addMessageForAgent(text, role, null, null);
               }
 
               if (role === "model") {
-                ShopifyAgent.Message.parseMessageContent(
+                ShopifyAgent.Message.parseMessageContentForAgent(
                   JSON.parse(text),
-                  messagesContainer,
                 );
               }
             });
 
-            ShopifyAgent.Message.grayOutHistoricalSuggestions(
-              messagesContainer,
-            );
+            ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
           }
         } catch (error) {
           console.error(
@@ -617,11 +833,115 @@
             error,
           );
           messagesContainer.removeChild(loadingMessage);
-          ShopifyAgent.Message.addMessage(
+          ShopifyAgent.Message.addMessageForAgent(
             "Failed to load conversation history.",
             "model",
-            messagesContainer,
+            null,
+            null,
           );
+        }
+      },
+
+      async oneShotResponseForAdvisor(
+        agentUserId,
+        advisorSessionId,
+        userMessage,
+      ) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/${advisorSessionId}/send-advisor-message`;
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userMessage,
+            }),
+          });
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split("\n\n");
+
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+
+              if (line.startsWith("data:")) {
+                const rawEvent = line.replace(/^data:\s*/, "");
+                const parsedEvent = JSON.parse(rawEvent);
+
+                this.handleResponseEventForAdvisor(parsedEvent);
+              }
+            }
+
+            buffer = lines[lines.length - 1];
+          }
+        } catch (error) {
+          console.error(
+            "Something went wrong in API.oneShotResponseForAdvisor: ",
+            error,
+          );
+        }
+      },
+
+      handleResponseEventForAdvisor(event) {
+        const part = event.content?.parts?.[0];
+
+        if (part.text) {
+          ShopifyAgent.Message.parseMessageContentForAdvisor(part.text);
+        }
+      },
+
+      async createSessionForAdvisor(agentUserId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/create-advisor-session`;
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const { data } = await response.json();
+
+          return data?.sessionId;
+        } catch (error) {
+          console.error(
+            "Something went wrong in API.createSessionForAdvisor: ",
+            error,
+          );
+          return null;
+        }
+      },
+
+      async fetchLatestSessionForAdvisor(agentUserId) {
+        const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/latest-advisor-session`;
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const { data } = await response.json();
+
+          return data?.latestSessionId;
+        } catch (error) {
+          console.error(
+            "Something went wrong in API.fetchLatestSessionForAdvisor: ",
+            error,
+          );
+          return null;
         }
       },
 
@@ -682,7 +1002,7 @@
         typingElement.dataset.typingIndicator = "true";
         typingElement.className = "flex flex-col gap-0 items-start";
 
-        const typingAvatar = this.createMessageAvator("model");
+        const typingAvatar = this.createMessageAvatarForAgent("model");
 
         const typingBubble = document.createElement("div");
         typingBubble.className = `relative max-w-[83%] break-words rounded-md px-3.5 py-[10.625px] leading-snug agent-chat-bubble ml-10 border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
@@ -709,7 +1029,7 @@
         return typingElement;
       },
 
-      createMessageElement(
+      createMessageElementForAgent(
         messageContent,
         messageSender,
         productComponent,
@@ -720,27 +1040,27 @@
           messageSender === "model" ? "items-start" : "items-end pt-2"
         }`;
 
-        const messageAvator = this.createMessageAvator(messageSender);
+        const messageAvatar = this.createMessageAvatarForAgent(messageSender);
 
-        const messageBubble = this.createMessageBubble(
+        const messageBubble = this.createMessageBubbleForAgent(
           messageContent,
           messageSender,
           productComponent,
           tableComponent,
         );
 
-        messageElement.appendChild(messageAvator);
+        messageElement.appendChild(messageAvatar);
         messageElement.appendChild(messageBubble);
 
         return messageElement;
       },
 
-      createMessageAvator(messageSender) {
-        const messageAvator = document.createElement("div");
-        messageAvator.className = "flex gap-0";
+      createMessageAvatarForAgent(messageSender) {
+        const messageAvatar = document.createElement("div");
+        messageAvatar.className = "flex gap-0";
 
         if (messageSender === "model") {
-          messageAvator.innerHTML = `
+          messageAvatar.innerHTML = `
             <img
               src="${CONFIG.AGENT_AVATAR}"
               alt="Shopify Agent Icon"
@@ -750,10 +1070,10 @@
             />
           `;
         } else {
-          messageAvator.innerHTML = `
+          messageAvatar.innerHTML = `
             <img
               src="${CONFIG.USER_AVATAR}"
-              alt="Shopify Agent Icon"
+              alt="Shopify User Icon"
               class="h-10 w-10 rounded-full object-cover border border-${CONFIG.THEME_COLOR}-200"
               width="40px"
               height="40px"
@@ -761,10 +1081,10 @@
           `;
         }
 
-        return messageAvator;
+        return messageAvatar;
       },
 
-      createMessageBubble(
+      createMessageBubbleForAgent(
         messageContent,
         messageSender,
         productComponent,
@@ -777,16 +1097,11 @@
             : `user-chat-bubble mr-10 border border-${CONFIG.THEME_COLOR}-500 bg-${CONFIG.THEME_COLOR}-500 text-white before:bg-${CONFIG.THEME_COLOR}-500 after:bg-${CONFIG.THEME_COLOR}-500`
         }`;
 
-        if (messageSender !== "model") {
-          messageBubble.innerHTML = this.formatMessageContent(messageContent);
-        } else {
-          const lineDiv = document.createElement("div");
-          lineDiv.innerHTML = this.formatMessageContent(messageContent);
+        messageBubble.innerHTML = this.formatMessageContent(messageContent);
 
-          messageBubble.appendChild(lineDiv);
-
+        if (messageSender === "model") {
           if (tableComponent) {
-            const table = this.createComparisonTable(
+            const table = this.createComparisonTableForAgent(
               tableComponent.headers,
               tableComponent.rows,
             );
@@ -800,7 +1115,7 @@
             messageBubble.appendChild(tableSummary);
           } else if (productComponent) {
             const messageProducts = productComponent.items;
-            const products = ShopifyAgent.Util.getLatestProducts();
+            const products = ShopifyAgent.Util.getAgentLatestProducts();
 
             const matchedProducts = products.filter((product) =>
               messageProducts.some(
@@ -813,7 +1128,7 @@
             if (matchedProducts.length > 0) {
               matchedProducts.forEach((product) => {
                 const productCard =
-                  ShopifyAgent.Util.createProductCard(product);
+                  ShopifyAgent.Util.createProductCardForAgent(product);
                 messageBubble.appendChild(productCard);
               });
             }
@@ -823,7 +1138,16 @@
         return messageBubble;
       },
 
-      createProductCard(product) {
+      createMessageBubbleForAdvisor(messageContent) {
+        const messageBubble = document.createElement("div");
+        messageBubble.className = `advisor-chat-bubble absolute bottom-2/3 right-full w-56 break-words rounded-md border border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 text-sm leading-snug text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+
+        messageBubble.innerHTML = this.formatMessageContent(messageContent);
+
+        return messageBubble;
+      },
+
+      createProductCardForAgent(product) {
         const minPrice = parseFloat(product.price_range.min);
         const maxPrice = parseFloat(product.price_range.max);
 
@@ -870,7 +1194,7 @@
         return productCard;
       },
 
-      createComparisonTable(tableHeaders, tableRows) {
+      createComparisonTableForAgent(tableHeaders, tableRows) {
         const comparisonTableWrapper = document.createElement("div");
         comparisonTableWrapper.style.scrollbarWidth = "thin";
         comparisonTableWrapper.className = "overflow-x-auto mt-2 mb-3";
@@ -928,7 +1252,7 @@
         return comparisonTableWrapper;
       },
 
-      createSuggestionGroup(suggestions) {
+      createSuggestionGroupForAgent(suggestions) {
         const suggestionGroup = document.createElement("div");
         suggestionGroup.className = "flex flex-col gap-2";
         suggestionGroup.dataset.suggestionGroup = "true";
@@ -945,16 +1269,13 @@
           // Store original text for sending
           suggestionButton.dataset.originalText = suggestion;
 
-          suggestionButton.addEventListener("click", () => {
+          suggestionButton.addEventListener("click", async () => {
             // Update suggestion state before sending message
-            this.updateSuggestionState(index, suggestionGroup);
+            this.updateSuggestionStateForAgent(index, suggestionGroup);
 
             // Use original text for sending, not the formatted HTML
             ShopifyAgent.UI.elements.chatInput.value = suggestion;
-            ShopifyAgent.Message.sendMessage(
-              ShopifyAgent.UI.elements.chatInput,
-              ShopifyAgent.UI.elements.messagesContainer,
-            );
+            await ShopifyAgent.Message.sendMessageForAgent();
           });
 
           suggestionGroup.appendChild(suggestionButton);
@@ -962,13 +1283,14 @@
         return suggestionGroup;
       },
 
-      updateSuggestionState(clickedIndex, suggestionGroup) {
+      updateSuggestionStateForAgent(clickedIndex, suggestionGroup) {
         const suggestionButtons = suggestionGroup.querySelectorAll("button");
 
         suggestionButtons.forEach((button, index) => {
           if (index === clickedIndex) {
-            // Keep clicked suggestion purple/active
-            button.className = `ml-10 max-w-[83%] cursor-pointer rounded-md bg-${CONFIG.THEME_COLOR}-300 p-3 text-left text-sm text-white transition-colors`;
+            // Keep clicked suggestion purple
+            button.className = `ml-10 max-w-[83%] cursor-default rounded-md bg-${CONFIG.THEME_COLOR}-300 p-3 text-left text-sm text-white transition-colors`;
+            button.disabled = true;
           } else {
             // Gray out other suggestions
             button.className =
@@ -978,7 +1300,7 @@
         });
       },
 
-      grayOutSuggestionButton(suggestionButton) {
+      grayOutSuggestionButtonForAgent(suggestionButton) {
         suggestionButton.className =
           "ml-10 max-w-[83%] cursor-default rounded-md bg-gray-200 p-3 text-left text-sm text-slate-400 transition-colors";
         suggestionButton.disabled = true;
@@ -1004,31 +1326,254 @@
         return formatted;
       },
 
-      getLatestProducts() {
-        const latestProducts = sessionStorage.getItem(
-          CONFIG.STORAGE_KEYS.LATEST_PRODUCTS,
+      startAdvisor() {
+        // Prevent duplicate intervals
+        if (CONFIG.INTERVAL_ID) return;
+
+        CONFIG.INTERVAL_ID = setInterval(async () => {
+          // If advisor is stopped, skip this cycle
+          if (CONFIG.ADVISOR_STOP_FLAG) return;
+
+          const isChatOpen = this.getAgentChatState() === "true";
+
+          ShopifyAgent.Message.removeMessageForAdvisor();
+
+          if (isChatOpen) {
+            const chatInput = ShopifyAgent.UI.elements.chatInput;
+
+            if (!chatInput.disabled) {
+              const advisorMessage = this.getAdvisorMessage();
+              const advisorSuggestions = this.getAdvisorSuggestions();
+
+              if (advisorMessage && advisorSuggestions) {
+                ShopifyAgent.Message.addMessageForAgentFromAdvisor(
+                  advisorMessage,
+                );
+                ShopifyAgent.Message.addSuggestionsForAgentFromAdvisor(
+                  advisorSuggestions,
+                );
+                ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
+              }
+            }
+
+            CONFIG.ADVISOR_STOP_FLAG = true;
+            clearInterval(CONFIG.INTERVAL_ID);
+            CONFIG.INTERVAL_ID = null;
+            return;
+          }
+
+          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
+          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
+
+          const agentUserId = this.getAgentUserId();
+          const advisorSessionId = this.getAdvisorSessionId();
+
+          if (CONFIG.ADVISOR_STOP_FLAG) return;
+
+          const shopifyHandle = this.getShopifyHandle();
+          const userMessage =
+            ShopifyAgent.Message.generateUserMessageForAdvisor(shopifyHandle);
+          await ShopifyAgent.API.oneShotResponseForAdvisor(
+            agentUserId,
+            advisorSessionId,
+            userMessage,
+          );
+        }, CONFIG.TIMING.INTERVAL_DELAY);
+      },
+
+      watchAgentChatState() {
+        const isChatOpen = this.getAgentChatState() === "true";
+
+        if (isChatOpen && CONFIG.INTERVAL_ID) {
+          ShopifyAgent.Message.removeMessageForAdvisor();
+
+          const chatInput = ShopifyAgent.UI.elements.chatInput;
+
+          if (!chatInput.disabled) {
+            const advisorMessage = this.getAdvisorMessage();
+            const advisorSuggestions = this.getAdvisorSuggestions();
+
+            if (advisorMessage && advisorSuggestions) {
+              ShopifyAgent.Message.addMessageForAgentFromAdvisor(
+                advisorMessage,
+              );
+              ShopifyAgent.Message.addSuggestionsForAgentFromAdvisor(
+                advisorSuggestions,
+              );
+              ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
+            }
+          }
+
+          CONFIG.ADVISOR_STOP_FLAG = true;
+          clearInterval(CONFIG.INTERVAL_ID);
+          CONFIG.INTERVAL_ID = null;
+        } else if (!isChatOpen && !CONFIG.INTERVAL_ID) {
+          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
+          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
+
+          CONFIG.ADVISOR_STOP_FLAG = false;
+          this.startAdvisor();
+        }
+      },
+
+      getShopifyHandle() {
+        const { pathname } = window.location;
+
+        return pathname;
+      },
+
+      getAgentChatState() {
+        const agentChatState = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.AGENT_CHAT_OPEN,
         );
 
-        if (!latestProducts) {
+        if (!agentChatState) {
+          return null;
+        }
+
+        return agentChatState;
+      },
+
+      getAgentUserId() {
+        const agentUserId = localStorage.getItem(
+          CONFIG.STORAGE_KEYS.AGENT_USER_ID,
+        );
+
+        if (!agentUserId) {
+          return null;
+        }
+
+        return agentUserId;
+      },
+
+      getAgentSessionId() {
+        const agentSessionId = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.AGENT_SESSION_ID,
+        );
+
+        if (!agentSessionId) {
+          return null;
+        }
+
+        return agentSessionId;
+      },
+
+      getAgentLatestProducts() {
+        const agentLatestProducts = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.AGENT_LATEST_PRODUCTS,
+        );
+
+        if (!agentLatestProducts) {
           return [];
         }
 
         try {
-          return JSON.parse(latestProducts);
+          return JSON.parse(agentLatestProducts);
         } catch (error) {
           console.error(
-            "Something went wrong in Util.getLatestProducts: ",
+            "Something went wrong in Util.getAgentLatestProducts: ",
             error,
           );
           return [];
         }
       },
 
-      setLatestProducts(products) {
-        sessionStorage.setItem(
-          CONFIG.STORAGE_KEYS.LATEST_PRODUCTS,
-          JSON.stringify(products),
+      getAdvisorSessionId() {
+        const advisorSessionId = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_SESSION_ID,
         );
+
+        if (!advisorSessionId) {
+          return null;
+        }
+
+        return advisorSessionId;
+      },
+
+      getAdvisorMessage() {
+        const advisorMessage = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_MESSAGE,
+        );
+
+        if (!advisorMessage) {
+          return null;
+        }
+
+        return advisorMessage;
+      },
+
+      getAdvisorSuggestions() {
+        const advisorSuggestions = sessionStorage.getItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_SUGGESTIONS,
+        );
+
+        if (!advisorSuggestions) {
+          return [];
+        }
+
+        try {
+          return JSON.parse(advisorSuggestions);
+        } catch (error) {
+          console.error(
+            "Something went wrong in Util.getAdvisorSuggestions: ",
+            error,
+          );
+          return [];
+        }
+      },
+
+      setAgentChatState(agentChatState) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.AGENT_CHAT_OPEN,
+          agentChatState,
+        );
+      },
+
+      setAgentUserId(agentUserId) {
+        localStorage.setItem(CONFIG.STORAGE_KEYS.AGENT_USER_ID, agentUserId);
+      },
+
+      setAgentSessionId(agentSessionId) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.AGENT_SESSION_ID,
+          agentSessionId,
+        );
+      },
+
+      setAgentLatestProducts(agentLatestProducts) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.AGENT_LATEST_PRODUCTS,
+          JSON.stringify(agentLatestProducts),
+        );
+      },
+
+      setAdvisorSessionId(advisorSessionId) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_SESSION_ID,
+          advisorSessionId,
+        );
+      },
+
+      setAdvisorMessage(advisorMessage) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_MESSAGE,
+          advisorMessage,
+        );
+      },
+
+      setAdvisorSuggestions(advisorSuggestions) {
+        sessionStorage.setItem(
+          CONFIG.STORAGE_KEYS.ADVISOR_SUGGESTIONS,
+          JSON.stringify(advisorSuggestions),
+        );
+      },
+
+      removeAdvisorMessage() {
+        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADVISOR_MESSAGE);
+      },
+
+      removeAdvisorSuggestions() {
+        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADVISOR_SUGGESTIONS);
       },
     },
 
@@ -1037,11 +1582,11 @@
       if (!container) return;
 
       this.UI.init(container);
-      this.UI.showTypingIndicator();
 
       // Check for existing conversation
-      let userId = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_ID);
-      let sessionId = sessionStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_ID);
+      let agentUserId = this.Util.getAgentUserId();
+      let agentSessionId = this.Util.getAgentSessionId();
+      let advisorSessionId = this.Util.getAdvisorSessionId();
       let cartId = await this.API.fetchCartId();
 
       if (!cartId.includes("?key=")) {
@@ -1049,32 +1594,49 @@
       }
 
       // Handle new user
-      if (!userId) {
-        userId = "user-" + crypto.randomUUID();
-        localStorage.setItem(CONFIG.STORAGE_KEYS.USER_ID, userId);
+      if (!agentUserId) {
+        agentUserId = "user-" + crypto.randomUUID();
+        this.Util.setAgentUserId(agentUserId);
       }
 
-      // Handle new sessions
-      if (!sessionId) {
-        sessionId = await this.API.fetchLatestSession(userId);
+      // Handle new sessions for advisor
+      if (!advisorSessionId) {
+        advisorSessionId =
+          await this.API.fetchLatestSessionForAdvisor(agentUserId);
 
-        if (sessionId) {
-          sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
+        if (advisorSessionId) {
+          this.Util.setAdvisorSessionId(advisorSessionId);
         } else {
-          sessionId = await this.API.createSession(userId, cartId);
-          sessionStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_ID, sessionId);
+          advisorSessionId =
+            await this.API.createSessionForAdvisor(agentUserId);
+          this.Util.setAdvisorSessionId(advisorSessionId);
+        }
+      }
+
+      // Handle new sessions for agent
+      if (!agentSessionId) {
+        agentSessionId = await this.API.fetchLatestSessionForAgent(agentUserId);
+
+        if (agentSessionId) {
+          this.Util.setAgentSessionId(agentSessionId);
+        } else {
+          agentSessionId = await this.API.createSessionForAgent(
+            agentUserId,
+            cartId,
+          );
+          this.Util.setAgentSessionId(agentSessionId);
 
           this.UI.removeTypingIndicator();
-          this.API.injectAgentMessage(sessionId, CONFIG.WELCOME_MESSAGE);
+          this.API.injectAgentMessage(agentSessionId, CONFIG.WELCOME_MESSAGE);
+
+          this.Util.startAdvisor();
           return;
         }
       }
 
       this.UI.removeTypingIndicator();
-      await this.API.fetchChatHistory(
-        sessionId,
-        this.UI.elements.messagesContainer,
-      );
+      await this.API.fetchChatHistoryForAgent(agentSessionId);
+      this.Util.startAdvisor();
     },
   };
 
