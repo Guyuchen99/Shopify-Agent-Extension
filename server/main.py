@@ -4,11 +4,11 @@ import uuid
 import datetime
 import vertexai
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, List, Any
 
 load_dotenv()
 
@@ -58,7 +58,10 @@ class AdvisorResponse(BaseModel):
 
 
 @app.post("/api/chat/{user_id}/create-agent-session", response_model=AgentResponse)
-async def create_agent_session(user_id: str, cart_id: str):
+async def create_agent_session(
+    user_id: str,
+    cart_id: str = Body(..., embed=True),
+):
     try:
         session = client.agent_engines.sessions.create(
             name=AGENT_ENGINE_BASE_URL,
@@ -95,7 +98,10 @@ async def create_agent_session(user_id: str, cart_id: str):
 
 
 @app.post("/api/chat/{session_id}/inject-agent-message", response_model=AgentResponse)
-async def inject_agent_message(session_id: str, message: str):
+async def inject_agent_message(
+    session_id: str,
+    message: str = Body(..., embed=True),
+):
     try:
         invocation_id = f"e-{uuid.uuid4()}"
 
@@ -119,16 +125,65 @@ async def inject_agent_message(session_id: str, message: str):
         )
 
         print(
-            f"✅ NOTE: /api/chat/{session_id}/inject-agent-message returned: {{'injectedAgentMessage': '{message}'}}"
+            f"✅ NOTE: /api/chat/{session_id}/inject-agent-message returned: {{'injectedAgentMessage': '{model_message}'}}"
         )
-        return AgentResponse(success=True, data={"injectedAgentMessage": message})
+        return AgentResponse(success=True, data={"injectedAgentMessage": model_message})
     except Exception as e:
         print(f"❌ ERROR: /api/chat/{session_id}/inject-agent-message failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/chat/{user_id}/{session_id}/send-agent-message")
-async def send_agent_message(user_id: str, session_id: str, message: str):
+@app.post(
+    "/api/chat/{session_id}/inject-agent-message-from-advisor",
+    response_model=AgentResponse,
+)
+async def inject_agent_message_from_advisor(
+    session_id: str,
+    message: str = Body(..., embed=True),
+    suggestions: List[str] = Body(..., embed=True),
+):
+    try:
+        invocation_id = f"e-{uuid.uuid4()}"
+
+        model_message = json.dumps(
+            {
+                "message": message,
+                "productComponent": None,
+                "tableComponent": None,
+                "suggestions": {"type": "default", "payload": suggestions},
+            }
+        )
+
+        client.agent_engines.sessions.events.append(
+            name=f"{AGENT_ENGINE_BASE_URL}/sessions/{session_id}",
+            author="shopify_agent",
+            invocation_id=invocation_id,
+            timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
+            config={
+                "content": {"role": "model", "parts": [{"text": model_message}]},
+            },
+        )
+
+        print(
+            f"✅ NOTE: /api/chat/{session_id}/inject-agent-message-from-advisor returned: {{'injectedAgentMessage': '{model_message}'}}"
+        )
+        return AgentResponse(success=True, data={"injectedAgentMessage": model_message})
+    except Exception as e:
+        print(
+            f"❌ ERROR: /api/chat/{session_id}/inject-agent-message-from-advisor failed: {e}"
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/api/chat/{user_id}/{session_id}/send-agent-message",
+    response_class=StreamingResponse,
+)
+async def send_agent_message(
+    user_id: str,
+    session_id: str,
+    message: str = Body(..., embed=True),
+):
     try:
         adk_application = client.agent_engines.get(name=AGENT_ENGINE_BASE_URL)
 
@@ -145,9 +200,10 @@ async def send_agent_message(user_id: str, session_id: str, message: str):
                 print(f"🟢 EVENT: {json.dumps(event, indent=2)}")
                 yield f"data: {json.dumps(event)}\n\n"
 
-        print(
-            f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-agent-message streaming ended."
-        )
+            print(
+                f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-agent-message streaming ended."
+            )
+
         return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
         print(
@@ -228,14 +284,21 @@ async def create_advisor_session(user_id: str):
         print(
             f"✅ NOTE: /api/chat/{user_id}/create-advisor-session returned: {{'sessionId': '{session_id}'}}"
         )
-        return AgentResponse(success=True, data={"sessionId": session_id})
+        return AdvisorResponse(success=True, data={"sessionId": session_id})
     except Exception as e:
         print(f"❌ ERROR: /api/chat/{user_id}/create-advisor-session failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/chat/{user_id}/{session_id}/send-advisor-message")
-async def send_advisor_message(user_id: str, session_id: str, message: str):
+@app.post(
+    "/api/chat/{user_id}/{session_id}/send-advisor-message",
+    response_class=StreamingResponse,
+)
+async def send_advisor_message(
+    user_id: str,
+    session_id: str,
+    message: str = Body(..., embed=True),
+):
     try:
         adk_application = client.agent_engines.get(name=ADVISOR_ENGINE_BASE_URL)
 
@@ -252,9 +315,10 @@ async def send_advisor_message(user_id: str, session_id: str, message: str):
                 print(f"🟢 EVENT: {json.dumps(event, indent=2)}")
                 yield f"data: {json.dumps(event)}\n\n"
 
-        print(
-            f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-advisor-message streaming ended."
-        )
+            print(
+                f"✅ NOTE: /api/chat/{user_id}/{session_id}/send-advisor-message streaming ended."
+            )
+
         return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
         print(
@@ -278,7 +342,9 @@ async def get_latest_advisor_session(user_id: str):
         print(
             f"✅ NOTE: /api/chat/{user_id}/latest-advisor-session returned: {{'latestSessionId': '{latest_session_id}'}}"
         )
-        return AgentResponse(success=True, data={"latestSessionId": latest_session_id})
+        return AdvisorResponse(
+            success=True, data={"latestSessionId": latest_session_id}
+        )
     except Exception as e:
         print(f"❌ ERROR: /api/chat/{user_id}/latest-advisor-session failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
