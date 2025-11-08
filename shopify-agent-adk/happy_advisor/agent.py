@@ -8,8 +8,9 @@ from happy_advisor.prompt import (
 
 
 class Output(BaseModel):
-    message: str = Field(description="Your response to the user")
+    message: str = Field(..., description="Your response to the user")
     suggestions: List[str] = Field(
+        ...,
         description="User's possible follow-up reply based on your response",
         min_length=2,
     )

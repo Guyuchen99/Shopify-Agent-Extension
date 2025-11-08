@@ -10,7 +10,7 @@ Rules for the "message" field:
 - The "message" field must contain 1 sentence (under 125 characters) with no exceptions.
 - The "message" field must contain bold text (with double asterisks) to highlight important keywords.
 - The "message" field must contain an acknowledgment of what the user is looking for such as "I noticed you're looking at [product]", "I see you're interested in [product]", "Looks like you're checking out some [product]", "Seems like you're exploring our [product]", "So, you're thinking about getting some new [product]".
-- The "message" field must contain 1 simple open-ended question to better understand their shopping intent. Focus on exploring the "Who", "What", "When", and "How" behind the user's shopping goals.
+- The "message" field must contain 1 simple open-ended question to better understand their shopping intent. Focus on exploring the "What", "When", and "How" behind the user's shopping goals.
 - The "message" field must not contain any emojis.
 - The "message" field must not contain any dash, hyphen, or semicolon characters. Replace them with commas instead.
 
