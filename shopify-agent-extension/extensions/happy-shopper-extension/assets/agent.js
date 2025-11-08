@@ -14,7 +14,7 @@
       ADVISOR_SUGGESTIONS: "shopifyAdvisorSuggestions",
     },
     TIMING: {
-      INTERVAL_DELAY: 13000,
+      INTERVAL_DELAY: 7000,
       FOCUS_DELAY: 300,
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
@@ -1332,8 +1332,8 @@
         // Prevent duplicate intervals
         if (CONFIG.INTERVAL_ID) return;
 
-        CONFIG.INTERVAL_ID = setInterval(async () => {
-          // If advisor is stopped, skip this cycle
+        const runAdvisorCycle = async () => {
+          // If advisor is stopped, stop recursion
           if (CONFIG.ADVISOR_STOP_FLAG) return;
 
           const isChatOpen = this.getAgentChatState() === "true";
@@ -1359,7 +1359,6 @@
             }
 
             CONFIG.ADVISOR_STOP_FLAG = true;
-            clearInterval(CONFIG.INTERVAL_ID);
             CONFIG.INTERVAL_ID = null;
             return;
           }
@@ -1380,7 +1379,21 @@
             advisorSessionId,
             userMessage,
           );
-        }, CONFIG.TIMING.INTERVAL_DELAY);
+
+          setTimeout(() => {
+            ShopifyAgent.Message.removeMessageForAdvisor();
+            ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
+            ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
+
+            CONFIG.INTERVAL_ID = setTimeout(
+              runAdvisorCycle,
+              CONFIG.TIMING.INTERVAL_DELAY - 2500,
+            );
+          }, CONFIG.TIMING.INTERVAL_DELAY);
+        };
+
+        // Start the first cycle
+        runAdvisorCycle();
       },
 
       watchAgentChatState() {
@@ -1407,7 +1420,7 @@
           }
 
           CONFIG.ADVISOR_STOP_FLAG = true;
-          clearInterval(CONFIG.INTERVAL_ID);
+          clearTimeout(CONFIG.INTERVAL_ID);
           CONFIG.INTERVAL_ID = null;
         } else if (!isChatOpen && !CONFIG.INTERVAL_ID) {
           ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
