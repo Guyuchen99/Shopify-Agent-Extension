@@ -57,7 +57,7 @@ def create() -> None:
         display_name="happy_shopper",
         requirements=[
             "google-adk===1.16.0",
-            "google-cloud-aiplatform[adk,agent_engines===1.112.0",
+            "google-cloud-aiplatform[adk,agent_engines]===1.112.0",
             "python-dotenv",
             "cloudpickle",
             "pydantic",
