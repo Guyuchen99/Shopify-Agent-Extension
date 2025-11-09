@@ -15,7 +15,7 @@
       ADVISOR_SUGGESTIONS: "shopifyAdvisorSuggestions",
     },
     TIMING: {
-      INTERVAL_DELAY: 5000,
+      INTERVAL_DELAY: 6000,
       FOCUS_DELAY: 300,
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
@@ -1372,7 +1372,6 @@
                 ShopifyAgent.Message.addSuggestionsForAgentFromAdvisor(
                   advisorSuggestions,
                 );
-                ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
               }
             }
             return;
@@ -1447,7 +1446,6 @@
               ShopifyAgent.Message.addSuggestionsForAgentFromAdvisor(
                 advisorSuggestions,
               );
-              ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
             }
           }
         } else {
