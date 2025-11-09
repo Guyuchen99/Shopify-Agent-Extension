@@ -19,4 +19,5 @@ Rules for the "suggestions" field:
 
 Mandatory Rules:
 - You must keep your reasoning simple and brief, and do not overthink.
+- You must always generate a different open-ended question for the user.
 """
