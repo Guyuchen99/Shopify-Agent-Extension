@@ -3,6 +3,7 @@
     API_BASE_URL:
       "https://happy-shopper-extension-412794838331.us-central1.run.app",
     ADVISOR_STOP_FLAG: false,
+    INTERVAL_DELAY_ID: null,
     INTERVAL_ID: null,
     STORAGE_KEYS: {
       AGENT_CHAT_OPEN: "shopifyAgentChatOpen",
@@ -14,7 +15,7 @@
       ADVISOR_SUGGESTIONS: "shopifyAdvisorSuggestions",
     },
     TIMING: {
-      INTERVAL_DELAY: 7000,
+      INTERVAL_DELAY: 5000,
       FOCUS_DELAY: 300,
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
@@ -523,6 +524,14 @@
         const messageBubble = document.querySelector(".advisor-chat-bubble");
 
         if (messageBubble) {
+          if (messageBubble._advisorClickHandler) {
+            messageBubble.removeEventListener(
+              "click",
+              messageBubble._advisorClickHandler,
+            );
+            delete messageBubble._advisorClickHandler;
+          }
+
           messageBubble.remove();
         }
       },
@@ -1142,9 +1151,14 @@
 
       createMessageBubbleForAdvisor(messageContent) {
         const messageBubble = document.createElement("div");
-        messageBubble.className = `advisor-chat-bubble absolute bottom-2/3 right-full w-56 break-words rounded-md border-2 border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 text-sm leading-snug text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
+        messageBubble.className = `advisor-chat-bubble absolute bottom-2/3 right-full w-56 cursor-pointer break-words rounded-md border-2 border-${CONFIG.THEME_COLOR}-700 bg-gray-100 px-3.5 py-3 text-sm leading-snug text-gray-700 before:bg-gray-100 after:bg-${CONFIG.THEME_COLOR}-700`;
 
         messageBubble.innerHTML = this.formatMessageContent(messageContent);
+
+        const clickHandler = () => ShopifyAgent.UI.toggleChatWindow();
+        messageBubble._advisorClickHandler = clickHandler;
+
+        messageBubble.addEventListener("click", clickHandler);
 
         return messageBubble;
       },
@@ -1330,7 +1344,7 @@
 
       startAdvisor() {
         // Prevent duplicate intervals
-        if (CONFIG.INTERVAL_ID) return;
+        if (CONFIG.INTERVAL_ID || CONFIG.INTERVAL_DELAY_ID) return;
 
         const runAdvisorCycle = async () => {
           // If advisor is stopped, stop recursion
@@ -1339,8 +1353,12 @@
           const isChatOpen = this.getAgentChatState() === "true";
 
           ShopifyAgent.Message.removeMessageForAdvisor();
+          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
+          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
 
           if (isChatOpen) {
+            this.stopAdvisor();
+
             const chatInput = ShopifyAgent.UI.elements.chatInput;
 
             if (!chatInput.disabled) {
@@ -1357,38 +1375,34 @@
                 ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
               }
             }
-
-            CONFIG.ADVISOR_STOP_FLAG = true;
-            CONFIG.INTERVAL_ID = null;
             return;
           }
-
-          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
-          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
 
           const agentUserId = this.getAgentUserId();
           const advisorSessionId = this.getAdvisorSessionId();
 
-          if (CONFIG.ADVISOR_STOP_FLAG) return;
-
           const shopifyHandle = this.getShopifyHandle();
           const userMessage =
             ShopifyAgent.Message.generateUserMessageForAdvisor(shopifyHandle);
+
+          if (CONFIG.ADVISOR_STOP_FLAG) return;
+
           await ShopifyAgent.API.oneShotResponseForAdvisor(
             agentUserId,
             advisorSessionId,
             userMessage,
           );
 
-          setTimeout(() => {
-            ShopifyAgent.Message.removeMessageForAdvisor();
-            ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
-            ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
+          CONFIG.INTERVAL_DELAY_ID = setTimeout(() => {
+            if (CONFIG.ADVISOR_STOP_FLAG) return;
 
-            CONFIG.INTERVAL_ID = setTimeout(
-              runAdvisorCycle,
-              CONFIG.TIMING.INTERVAL_DELAY - 2500,
-            );
+            ShopifyAgent.Message.removeMessageForAdvisor();
+
+            CONFIG.INTERVAL_ID = setTimeout(() => {
+              if (CONFIG.ADVISOR_STOP_FLAG) return;
+
+              runAdvisorCycle();
+            }, CONFIG.TIMING.INTERVAL_DELAY - 2500);
           }, CONFIG.TIMING.INTERVAL_DELAY);
         };
 
@@ -1396,11 +1410,29 @@
         runAdvisorCycle();
       },
 
+      stopAdvisor() {
+        if (CONFIG.INTERVAL_DELAY_ID) {
+          clearTimeout(CONFIG.INTERVAL_DELAY_ID);
+          CONFIG.INTERVAL_DELAY_ID = null;
+        }
+
+        if (CONFIG.INTERVAL_ID) {
+          clearTimeout(CONFIG.INTERVAL_ID);
+          CONFIG.INTERVAL_ID = null;
+        }
+
+        CONFIG.ADVISOR_STOP_FLAG = true;
+      },
+
       watchAgentChatState() {
         const isChatOpen = this.getAgentChatState() === "true";
 
-        if (isChatOpen && CONFIG.INTERVAL_ID) {
+        if (isChatOpen) {
+          this.stopAdvisor();
+
           ShopifyAgent.Message.removeMessageForAdvisor();
+          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
+          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
 
           const chatInput = ShopifyAgent.UI.elements.chatInput;
 
@@ -1418,14 +1450,7 @@
               ShopifyAgent.Message.grayOutHistoricalSuggestionsForAgent();
             }
           }
-
-          CONFIG.ADVISOR_STOP_FLAG = true;
-          clearTimeout(CONFIG.INTERVAL_ID);
-          CONFIG.INTERVAL_ID = null;
-        } else if (!isChatOpen && !CONFIG.INTERVAL_ID) {
-          ShopifyAgent.Message.removeMessageForAgentFromAdvisor();
-          ShopifyAgent.Message.removeSuggestionsForAgentFromAdvisor();
-
+        } else {
           CONFIG.ADVISOR_STOP_FLAG = false;
           this.startAdvisor();
         }
