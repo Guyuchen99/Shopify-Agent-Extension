@@ -1,15 +1,17 @@
 import os
 import json
 import requests
+from google.genai import types
 from google.adk.agents import Agent
+from google.adk.planners import BuiltInPlanner
 from google.adk.tools import google_search
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.tool_context import ToolContext
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
-from pydantic import BaseModel, Field
-from typing import List, Any, Dict, Optional
+from pydantic import BaseModel
+from typing import List, Any, Dict, Optional, Literal
 from dotenv import load_dotenv
 
 from happy_shopper.prompt import (
@@ -24,40 +26,25 @@ SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN")
 
 
 class ProductsComponent(BaseModel):
-    items: List[str] = Field(..., description="List of product names")
+    items: List[str]
 
 
 class TableComponent(BaseModel):
-    headers: List[str] = Field(..., description="Table headers")
-    rows: List[List[str]] = Field(..., description="Table rows")
-    summary: str = Field(..., description="One-sentence summary of table insights")
+    headers: List[str]
+    rows: List[List[str]]
+    summary: str
 
 
 class Suggestions(BaseModel):
-    type: str = Field(
-        ...,
-        description="Must be 'default' or a product option type (e.g., 'colors', 'sizes', 'materials', etc.)",
-    )
-    payload: List[str] = Field(
-        ...,
-        description="List of suggested user replies",
-        min_length=2,
-    )
+    type: str
+    payload: List[str]
 
 
 class AgentOutput(BaseModel):
-    message: str = Field(..., description="Your response to the user")
-    productComponent: Optional[ProductsComponent] = Field(
-        None,
-        description="Optional products component attached to your response",
-    )
-    tableComponent: Optional[TableComponent] = Field(
-        None,
-        description="Optional table component attached to your response",
-    )
-    suggestions: Suggestions = Field(
-        ..., description="Suggested user replies based on your response"
-    )
+    message: str
+    productComponent: Optional[ProductsComponent] = None
+    tableComponent: Optional[TableComponent] = None
+    suggestions: Suggestions
 
 
 def after_tool_callback(
@@ -192,7 +179,9 @@ def get_cached_products(product_name: str, tool_context: ToolContext) -> dict:
     }
 
 
-def set_gender_preference(gender: str, tool_context: ToolContext) -> dict:
+def set_gender_preference(
+    gender: Literal["men", "women", "unisex"], tool_context: ToolContext
+) -> dict:
     """
     Sets the user's shopping gender preference in the session state, indicating which gender category the user intends to shop for.
 
@@ -222,6 +211,9 @@ root_agent = Agent(
     model="gemini-2.5-pro",
     description="A personalized shopping agent for YC Graphixs's store",
     instruction=ShopifyAgentInstruction,
+    planner=BuiltInPlanner(
+        thinking_config=types.ThinkingConfig(include_thoughts=True, thinking_budget=128)
+    ),
     tools=[
         AgentTool(agent=search_agent),
         McpToolset(
