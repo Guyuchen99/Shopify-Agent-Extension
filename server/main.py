@@ -13,10 +13,10 @@ from typing import Dict, List, Any
 load_dotenv()
 
 PORT = int(os.getenv("PORT", 8000))
-PROJECT_ID = os.getenv("PROJECT_ID")
-LOCATION = os.getenv("LOCATION")
-RESOURCE_ID_AGENT = os.getenv("RESOURCE_ID_AGENT")
-RESOURCE_ID_ADVISOR = os.getenv("RESOURCE_ID_ADVISOR")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
+RESOURCE_ID_AGENT = os.getenv("GOOGLE_CLOUD_RESOURCE_ID_AGENT")
+RESOURCE_ID_ADVISOR = os.getenv("GOOGLE_CLOUD_RESOURCE_ID_ADVISOR")
 
 AGENT_ENGINE_BASE_URL = (
     f"projects/{PROJECT_ID}/locations/{LOCATION}/reasoningEngines/{RESOURCE_ID_AGENT}"
