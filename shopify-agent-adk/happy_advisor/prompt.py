@@ -18,6 +18,6 @@ Rules for the "suggestions" field:
 - The "suggestions" field must contain exactly 3 short, specific, and realistic user responses (what the user might naturally type next, each under 30 characters) to the open-ended question asked in the "message" field. Avoid vague or generic responses.
 
 Mandatory Rules:
-- You must keep your reasoning simple and brief, and do not overthink.
 - You must always generate a different open-ended question for the user.
+- You must keep your reasoning simple and brief, and do not overthink.
 """

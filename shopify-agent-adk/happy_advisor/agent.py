@@ -7,7 +7,7 @@ from happy_advisor.prompt import (
 )
 
 
-class Output(BaseModel):
+class AdvisorOutput(BaseModel):
     message: str = Field(..., description="Your response to the user")
     suggestions: List[str] = Field(
         ...,
@@ -21,5 +21,5 @@ root_agent = Agent(
     model="gemini-2.5-flash",
     description="A personalized advising agent for YC Graphixs's store",
     instruction=ShopifyAdvisorInstruction,
-    output_schema=Output,
+    output_schema=AdvisorOutput,
 )
