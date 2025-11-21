@@ -85,7 +85,7 @@ def create2() -> None:
         display_name="happy_advisor",
         requirements=[
             "google-adk===1.17.0",
-            "google-cloud-aiplatform[adk,agent_engines]",
+            "google-cloud-aiplatform[adk,agent_engines]===1.125.0",
             "python-dotenv",
             "cloudpickle",
             "pydantic",
