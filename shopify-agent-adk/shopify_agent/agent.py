@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from typing import List, Any, Dict, Optional, Literal
 from dotenv import load_dotenv
 
-from happy_shopper.prompt import (
+from shopify_agent.prompt import (
     SearchAgentInstruction,
     ShopifyAgentInstruction,
 )

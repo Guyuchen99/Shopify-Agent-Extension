@@ -2,7 +2,7 @@ from google.adk.agents import Agent
 from pydantic import BaseModel, Field
 from typing import List
 
-from happy_advisor.prompt import (
+from shopify_advisor.prompt import (
     ShopifyAdvisorInstruction,
 )
 

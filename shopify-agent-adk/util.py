@@ -43,7 +43,7 @@ flags.mark_bool_flags_as_mutual_exclusive(
 def create() -> None:
     """Creates a new deployment."""
 
-    from happy_shopper.agent import root_agent
+    from shopify_agent.agent import root_agent
 
     # First wrap the agent in AdkApp
     app = agent_engines.AdkApp(
@@ -54,7 +54,7 @@ def create() -> None:
     # Now deploy to Agent Engine
     remote_app = agent_engines.create(
         agent_engine=app,
-        display_name="happy_shopper",
+        display_name="Syntra-AI-99",
         requirements=[
             "google-adk===1.17.0",
             "google-cloud-aiplatform[adk,agent_engines]",
@@ -63,7 +63,7 @@ def create() -> None:
             "pydantic",
         ],
         env_vars=["SHOPIFY_ADMIN_TOKEN", "SHOPIFY_DOMAIN"],
-        extra_packages=["./happy_shopper"],
+        extra_packages=["./shopify_agent"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
 
@@ -71,7 +71,7 @@ def create() -> None:
 def create2() -> None:
     """Creates a new deployment."""
 
-    from happy_advisor.agent import root_agent
+    from shopify_advisor.agent import root_agent
 
     # First wrap the agent in AdkApp
     app = agent_engines.AdkApp(
@@ -82,7 +82,7 @@ def create2() -> None:
     # Now deploy to Agent Engine
     remote_app = agent_engines.create(
         agent_engine=app,
-        display_name="happy_advisor",
+        display_name="Syntra-AI-Advisor-99",
         requirements=[
             "google-adk===1.17.0",
             "google-cloud-aiplatform[adk,agent_engines]===1.125.0",
@@ -90,7 +90,7 @@ def create2() -> None:
             "cloudpickle",
             "pydantic",
         ],
-        extra_packages=["./happy_advisor"],
+        extra_packages=["./shopify_advisor"],
     )
     print(f"Created remote app: {remote_app.resource_name}")
 
