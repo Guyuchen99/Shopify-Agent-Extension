@@ -30,7 +30,7 @@ export default function Index() {
             <Card>
               <BlockStack gap="200">
                 <Button url={themeEditorUrl} target="_blank" external>
-                  Add Your Shopify Agent Here
+                  Add Syntra AI Here
                 </Button>
               </BlockStack>
             </Card>

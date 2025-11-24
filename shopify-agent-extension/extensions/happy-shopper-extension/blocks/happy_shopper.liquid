@@ -12,11 +12,11 @@
   <!-- Floating Agent Bubble -->
   <div class="shopify-agent-bubble flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden bg-transparent transition-transform hover:scale-105">
     <img
-      src="{{ 'agent_icon.jpg' | asset_url }}"
-      alt="Shopify Agent Icon"
-      class="animate-glowing h-3/4 w-3/4 rounded-full border border-gray-200 object-cover"
-      width="144px"
-      height="144px"
+      src="{{ 'agent_icon.png' | asset_url }}"
+      alt="Syntra AI Icon"
+      class="animate-glowing h-3/4 w-3/4 rounded-full border-4 border-gray-200 object-cover"
+      width="108px"
+      height="108px"
     >
   </div>
 
@@ -24,15 +24,15 @@
   <div class="shopify-agent-window pointer-events-none absolute bottom-full right-0 z-50 mb-1 flex flex-col overflow-hidden rounded-2xl border border-{{ block.settings.agent_theme_color }}-600 bg-gradient-to-b from-{{ block.settings.agent_theme_color }}-200 h-[calc(100vh-12rem)] max-h-[550px] w-[90vw] max-w-[375px] gap-0 via-white opacity-0 shadow-xl backdrop-blur-3xl transition-all duration-200">
     <!-- Header -->
     <div class="shopify-agent-header flex items-center justify-between border-b border-{{ block.settings.agent_theme_color }}-600 bg-{{ block.settings.agent_theme_color }}-500 gap-0 p-4 font-semibold">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 pl-0.5">
         <img
-          src="https://p1.hiclipart.com/preview/801/155/669/bag-icon-line-icon-shopify-icon-social-icon-transparent-icon-electric-blue-symbol-number-logo-png-clipart.jpg"
-          alt="Shopify Agent"
-          class="h-8 w-8"
+          src="{{ 'agent_icon.png' | asset_url }}"
+          alt="Syntra AI Icon"
+          class="h-8 w-8 border-2 border-gray-200"
           width="32px"
           height="32px"
         >
-        <span class="text-lg font-semibold text-white">Shopify Agent</span>
+        <span class="text-lg font-semibold text-white">Syntra AI</span>
       </div>
 
       <div class="-mr-2 flex justify-between gap-0">
@@ -164,7 +164,7 @@
 
 {% schema %}
 {
-  "name": "AI Agent",
+  "name": "Syntra AI",
   "target": "body",
   "settings": [
     {

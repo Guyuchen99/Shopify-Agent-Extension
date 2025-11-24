@@ -1,7 +1,6 @@
 (function () {
   const CONFIG = {
-    API_BASE_URL:
-      "https://happy-shopper-extension-412794838331.us-central1.run.app",
+    API_BASE_URL: "https://syntra-ai-99-390097820119.us-central1.run.app",
     ADVISOR_STOP_FLAG: false,
     INTERVAL_DELAY_ID: null,
     INTERVAL_ID: null,
@@ -22,9 +21,8 @@
     },
     WELCOME_MESSAGE: "👋 Hi there! How can I help you today?",
     AGENT_AVATAR:
-      "https://img.freepik.com/premium-vector/cute-robot-cartoon-vector-icon-illustration-techology-robot-icon-concept-isolated-premium-vector-flat-cartoon-style_138676-1474.jpg",
-    USER_AVATAR:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiLkC3N1FD4ShhqOCHpv03D00GR97kXfwmpw&s",
+      "https://customermaps.co/wp-content/uploads/2025/11/Agent.jpg",
+    USER_AVATAR: "https://customermaps.co/wp-content/uploads/2025/11/User.jpg",
     SHOPIFY_URL: "https://ycgraphixs-dev.myshopify.com",
     THEME_COLOR: window.ShopifyAgentConfig?.THEME_COLOR,
   };
@@ -368,6 +366,7 @@
             );
           }
 
+          ShopifyAgent.UI.removeTypingIndicator();
           messagesContainer.appendChild(messageElement);
         }
 
@@ -684,14 +683,11 @@
 
             buffer = lines[lines.length - 1];
           }
-
-          ShopifyAgent.UI.removeTypingIndicator();
         } catch (error) {
           console.error(
             "Something went wrong in API.oneShotResponseForAgent: ",
             error,
           );
-          ShopifyAgent.UI.removeTypingIndicator();
           ShopifyAgent.Message.addMessageForAgent(
             "Sorry, I couldn't process your request at the moment. Please try again later.",
             "model",
@@ -1620,6 +1616,7 @@
       if (!container) return;
 
       this.UI.init(container);
+      this.UI.showTypingIndicator();
 
       // Check for existing conversation
       let agentUserId = this.Util.getAgentUserId();
