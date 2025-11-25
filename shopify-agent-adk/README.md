@@ -21,7 +21,7 @@ uv run util.py --create2
 3. Delete a resource:
 
 ```bash
- uv run util.py --delete --resource_id=your-resource-id
+uv run util.py --delete --resource_id=your-resource-id
 ```
 
 4. Create a session:

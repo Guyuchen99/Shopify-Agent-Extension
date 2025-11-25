@@ -211,7 +211,7 @@ root_agent = Agent(
     model="gemini-2.5-pro",
     description="A personalized shopping agent for YC Graphixs's store",
     instruction=ShopifyAgentInstruction,
-    planner=BuiltInPlanner(thinking_config=types.ThinkingConfig(thinking_budget=256)),
+    planner=BuiltInPlanner(thinking_config=types.ThinkingConfig(thinking_budget=128)),
     tools=[
         AgentTool(agent=search_agent),
         McpToolset(
