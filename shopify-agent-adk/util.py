@@ -54,10 +54,10 @@ def create() -> None:
     # Now deploy to Agent Engine
     remote_app = agent_engines.create(
         agent_engine=app,
-        display_name="Syntra-AI-99",
+        display_name="Syntra AI 99",
         requirements=[
             "google-adk===1.17.0",
-            "google-cloud-aiplatform[adk,agent_engines]",
+            "google-cloud-aiplatform[adk,agent_engines]===1.125.0",
             "python-dotenv",
             "cloudpickle",
             "pydantic",
@@ -82,7 +82,7 @@ def create2() -> None:
     # Now deploy to Agent Engine
     remote_app = agent_engines.create(
         agent_engine=app,
-        display_name="Syntra-AI-Advisor-99",
+        display_name="Syntra AI Advisor 99",
         requirements=[
             "google-adk===1.17.0",
             "google-cloud-aiplatform[adk,agent_engines]===1.125.0",
