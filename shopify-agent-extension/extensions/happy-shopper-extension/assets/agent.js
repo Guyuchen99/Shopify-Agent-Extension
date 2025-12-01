@@ -1,9 +1,6 @@
 (function () {
   const CONFIG = {
     API_BASE_URL: "https://syntra-ai-99-390097820119.us-central1.run.app",
-    ADVISOR_STOP_FLAG: false,
-    INTERVAL_DELAY_ID: null,
-    INTERVAL_ID: null,
     STORAGE_KEYS: {
       AGENT_CHAT_OPEN: "shopifyAgentChatOpen",
       AGENT_USER_ID: "shopifyAgentUserId",
@@ -19,6 +16,10 @@
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
     },
+    ADVISOR_STOP_FLAG: false,
+    ADVISOR_INTERVAL_DELAY_ID: null,
+    ADVISOR_INTERVAL_ID: null,
+    ADVISOR_CYCLE_ID: null,
     WELCOME_MESSAGE: "👋 Hi there! How can I help you today?",
     AGENT_AVATAR:
       "https://customermaps.co/wp-content/uploads/2025/11/Agent.jpg",
@@ -853,6 +854,7 @@
         agentUserId,
         advisorSessionId,
         userMessage,
+        advisorCycleId,
       ) {
         const requestUrl = `${CONFIG.API_BASE_URL}/api/chat/${agentUserId}/${advisorSessionId}/send-advisor-message`;
 
@@ -864,6 +866,8 @@
               message: userMessage,
             }),
           });
+
+          if (CONFIG.ADVISOR_CYCLE_ID !== advisorCycleId) return;
 
           const reader = response.body.getReader();
           const decoder = new TextDecoder("utf-8");
@@ -1339,11 +1343,10 @@
       },
 
       startAdvisor() {
-        // Prevent duplicate intervals
-        if (CONFIG.INTERVAL_ID || CONFIG.INTERVAL_DELAY_ID) return;
-
         const runAdvisorCycle = async () => {
-          // If advisor is stopped, stop recursion
+          CONFIG.ADVISOR_CYCLE_ID = crypto.randomUUID();
+          const currentAdvisorCycleId = CONFIG.ADVISOR_CYCLE_ID;
+
           if (CONFIG.ADVISOR_STOP_FLAG) return;
 
           const isChatOpen = this.getAgentChatState() === "true";
@@ -1386,14 +1389,16 @@
             agentUserId,
             advisorSessionId,
             userMessage,
+            currentAdvisorCycleId,
           );
 
-          CONFIG.INTERVAL_DELAY_ID = setTimeout(() => {
+          if (CONFIG.ADVISOR_CYCLE_ID !== currentAdvisorCycleId) return;
+
+          CONFIG.ADVISOR_INTERVAL_DELAY_ID = setTimeout(() => {
             if (CONFIG.ADVISOR_STOP_FLAG) return;
 
             ShopifyAgent.Message.removeMessageForAdvisor();
-
-            CONFIG.INTERVAL_ID = setTimeout(() => {
+            CONFIG.ADVISOR_INTERVAL_ID = setTimeout(() => {
               if (CONFIG.ADVISOR_STOP_FLAG) return;
 
               runAdvisorCycle();
@@ -1406,14 +1411,14 @@
       },
 
       stopAdvisor() {
-        if (CONFIG.INTERVAL_DELAY_ID) {
-          clearTimeout(CONFIG.INTERVAL_DELAY_ID);
-          CONFIG.INTERVAL_DELAY_ID = null;
+        if (CONFIG.ADVISOR_INTERVAL_DELAY_ID) {
+          clearTimeout(CONFIG.ADVISOR_INTERVAL_DELAY_ID);
+          CONFIG.ADVISOR_INTERVAL_DELAY_ID = null;
         }
 
-        if (CONFIG.INTERVAL_ID) {
-          clearTimeout(CONFIG.INTERVAL_ID);
-          CONFIG.INTERVAL_ID = null;
+        if (CONFIG.ADVISOR_INTERVAL_ID) {
+          clearTimeout(CONFIG.ADVISOR_INTERVAL_ID);
+          CONFIG.ADVISOR_INTERVAL_ID = null;
         }
 
         CONFIG.ADVISOR_STOP_FLAG = true;
