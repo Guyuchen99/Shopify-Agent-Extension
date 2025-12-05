@@ -1343,6 +1343,7 @@
       },
 
       startAdvisor() {
+        // NOTE: Do not change this if you don't fully understand it
         const runAdvisorCycle = async () => {
           CONFIG.ADVISOR_CYCLE_ID = crypto.randomUUID();
           const currentAdvisorCycleId = CONFIG.ADVISOR_CYCLE_ID;
@@ -1616,6 +1617,7 @@
       },
     },
 
+    // NOTE: This is fragile, make sure you changed all references
     async init() {
       const container = document.querySelector(".shopify-agent-container");
       if (!container) return;
