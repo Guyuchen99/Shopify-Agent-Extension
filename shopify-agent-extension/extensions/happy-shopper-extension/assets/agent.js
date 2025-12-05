@@ -572,14 +572,18 @@
             return `I am on the ${policy.replace(/-/g, " ")} policy page.`;
           }
 
+          case shopifyHandle.includes("/cart"): {
+            return "I am on my shopping cart page.";
+          }
+
           case shopifyHandle.includes("/account/"): {
             const accountPage = shopifyHandle.split("/account/")[1] || "main";
-            return `I am on the account ${accountPage.replace(/-/g, " ")} page.`;
+            return `I am on my account ${accountPage.replace(/-/g, " ")} page.`;
           }
 
           case shopifyHandle.includes("/search"): {
-            const searchTerm =
-              shopifyHandle.split("/search?q=")[1].split("&")[0] || "";
+            const params = new URLSearchParams(window.location.search);
+            const searchTerm = params.get("q") || "";
 
             return searchTerm
               ? `I am on the search page looking for ${searchTerm}.`
@@ -589,7 +593,6 @@
           default:
             return "I am on the home page.";
         }
-      },
     },
 
     API: {
