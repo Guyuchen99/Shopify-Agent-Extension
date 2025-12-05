@@ -593,6 +593,7 @@
           default:
             return "I am on the home page.";
         }
+      },
     },
 
     API: {
