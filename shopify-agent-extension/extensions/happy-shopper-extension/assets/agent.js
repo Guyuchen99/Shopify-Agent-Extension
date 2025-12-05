@@ -11,7 +11,7 @@
       ADVISOR_SUGGESTIONS: "shopifyAdvisorSuggestions",
     },
     TIMING: {
-      INTERVAL_DELAY: 6000,
+      INTERVAL_DELAY: 7000,
       FOCUS_DELAY: 300,
       KEYBOARD_DELAY: 500,
       SCROLL_DELAY: 100,
