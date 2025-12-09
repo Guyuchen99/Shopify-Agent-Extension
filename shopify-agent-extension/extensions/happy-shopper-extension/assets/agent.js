@@ -41,6 +41,7 @@
           container: container,
           chatBubble: container.querySelector(".shopify-agent-bubble"),
           chatWindow: container.querySelector(".shopify-agent-window"),
+          optionsButton: container.querySelector(".shopify-agent-options"),
           closeButton: container.querySelector(".shopify-agent-close"),
           chatInput: container.querySelector(".shopify-agent-input"),
           sendButton: container.querySelector(".shopify-agent-send"),
@@ -55,14 +56,24 @@
       },
 
       setUpEventListeners() {
-        const { chatBubble, closeButton, chatInput, sendButton } =
-          this.elements;
+        const {
+          chatBubble,
+          optionsButton,
+          closeButton,
+          chatInput,
+          sendButton,
+        } = this.elements;
 
         // Toggle chat when bubble clicked
         chatBubble.addEventListener("click", () => this.toggleChatWindow());
 
         // Close chat on close button
         closeButton.addEventListener("click", () => this.toggleChatWindow());
+
+        // Reset chat on options button
+        optionsButton.addEventListener("click", async () => {
+          await ShopifyAgent.Util.resetAgentState();
+        });
 
         // Send on enter key
         chatInput.addEventListener("keydown", (e) => {
@@ -333,6 +344,8 @@
           agentSessionId,
           userMessage,
         );
+
+        ShopifyAgent.UI.removeTypingIndicator();
       },
 
       addMessageForAgent(
@@ -372,6 +385,12 @@
         }
 
         ShopifyAgent.UI.scrollToLastUserMessage();
+      },
+
+      removeAllMessagesForAgent() {
+        const { messagesContainer } = ShopifyAgent.UI.elements;
+
+        messagesContainer.innerHTML = "";
       },
 
       addMessageForAgentFromAdvisor(messageContent) {
@@ -693,16 +712,20 @@
             "Something went wrong in API.oneShotResponseForAgent: ",
             error,
           );
-          ShopifyAgent.Message.addMessageForAgent(
-            "Sorry, I couldn't process your request at the moment. Please try again later.",
-            "model",
-            null,
-            null,
-          );
         }
       },
 
       handleResponseEventForAgent(event) {
+        if (event?.error_code === "MALFORMED_FUNCTION_CALL") {
+          ShopifyAgent.Message.addMessageForAgent(
+            "Sorry, our connection just got disconnected for a second. Could you please try again?",
+            "model",
+            null,
+            null,
+          );
+          return;
+        }
+
         event.content?.parts?.forEach((part) => {
           if (part.function_call?.name === "set_model_response") {
             ShopifyAgent.Message.parseMessageContentForAgent(
@@ -1612,6 +1635,22 @@
         );
       },
 
+      removeAgentUserId() {
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.AGENT_USER_ID);
+      },
+
+      removeAgentSessionId() {
+        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AGENT_SESSION_ID);
+      },
+
+      removeAgentLatestProducts() {
+        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AGENT_LATEST_PRODUCTS);
+      },
+
+      removeAdvisorSessionId() {
+        sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADVISOR_SESSION_ID);
+      },
+
       removeAdvisorMessage() {
         sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADVISOR_MESSAGE);
       },
@@ -1619,14 +1658,33 @@
       removeAdvisorSuggestions() {
         sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADVISOR_SUGGESTIONS);
       },
+
+      async resetAgentState() {
+        this.stopAdvisor();
+
+        this.removeAgentUserId();
+        this.removeAgentSessionId();
+        this.removeAgentLatestProducts();
+
+        this.removeAdvisorSessionId();
+        this.removeAdvisorMessage();
+        this.removeAdvisorSuggestions();
+
+        ShopifyAgent.Message.removeAllMessagesForAgent();
+
+        await ShopifyAgent.init(false);
+      },
     },
 
     // NOTE: This is fragile, make sure you changed all references
-    async init() {
+    async init(isInitialSetup) {
       const container = document.querySelector(".shopify-agent-container");
       if (!container) return;
 
-      this.UI.init(container);
+      if (isInitialSetup) {
+        this.UI.init(container);
+      }
+
       this.UI.showTypingIndicator();
 
       // Check for existing conversation
@@ -1675,16 +1733,21 @@
           this.UI.removeTypingIndicator();
           this.API.injectAgentMessage(agentSessionId, CONFIG.WELCOME_MESSAGE);
 
-          this.Util.startAdvisor();
+          if (isInitialSetup) {
+            this.Util.startAdvisor();
+          }
           return;
         }
       }
 
       this.UI.removeTypingIndicator();
       await this.API.fetchChatHistoryForAgent(agentSessionId);
-      this.Util.startAdvisor();
+
+      if (isInitialSetup) {
+        this.Util.startAdvisor();
+      }
     },
   };
 
-  ShopifyAgent.init();
+  ShopifyAgent.init(true);
 })();
